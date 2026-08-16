@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mitchell"
+version = "0.1.0"
+description = "Lean, fast multi-agent orchestration runtime for Windows, Android, and Browser control."
+authors = [{ name = "Mitchell", email = "mitchell@example.com" }]
+dependencies = [
+    # Will be populated as we port, typical dependencies for LLM, MCP, etc.
+    "pydantic>=2.0.0",
+    "mcp>=0.1.0",
+    "httpx",
+]
+
+[project.scripts]
+mitchell = "mitchell.cli:main"
+mitchell-mcp = "mitchell.mcp_server:main"
