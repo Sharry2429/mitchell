@@ -117,8 +117,7 @@ from mitchell.windows.hardware import (
     volume_up,
 )
 
-# ─── STT (Speech-to-Text) ────────────────────────────────────────────────
-from mitchell.windows.stt import listen_and_transcribe
+
 
 # ─── System (Power, Process, Shell, Sysinfo, Registry, Services) ──────────
 from mitchell.windows.system import (
@@ -182,8 +181,7 @@ from mitchell.windows.system import (
     which,
 )
 
-# ─── TTS (Text-to-Speech) ────────────────────────────────────────────────
-from mitchell.windows.tts import get_voices, speak
+
 
 # ─── Types (for type annotations in user code) ─────────────────────────────
 from mitchell.windows.types import (
@@ -433,11 +431,8 @@ __all__ = [
     "set_power_plan",
     "get_sleep_timeout",
     "set_sleep_timeout",
-    # TTS
-    "speak",
-    "get_voices",
-    # STT
-    "listen_and_transcribe",
+
+
     # Types (re-exported for convenience)
     "DesktopState",
     "Window",

@@ -2,7 +2,12 @@ import logging
 import subprocess
 import time
 
-from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
+try:
+    from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
+except ImportError:
+    ServiceBrowser = Zeroconf = None
+    class ServiceListener:
+        pass
 
 logger = logging.getLogger(__name__)
 
