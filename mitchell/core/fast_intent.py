@@ -70,7 +70,7 @@ class FastIntentCache:
         ]
         
         try:
-            result = provider.call(messages, tools=tools_schema)
+            result = await provider.call(messages=messages, tools=tools_schema)
             if result.tool_calls:
                 tcall = result.tool_calls[0]
                 args = json.loads(tcall.function.arguments or "{}")

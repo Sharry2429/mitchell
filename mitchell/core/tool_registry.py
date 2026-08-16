@@ -7,11 +7,16 @@ import inspect
 import pkgutil
 from typing import Callable, Any
 
-# Tool registry storage
+from mcp.server.fastmcp import FastMCP
+
+# Global FastMCP instance
+mcp = FastMCP("Mitchell")
+
+# Fallback for internal use (if needed)
 _registry: dict[str, Callable] = {}
 
 def get_registry() -> dict[str, Callable]:
-    """Returns the populated tool registry."""
+    """Returns the populated tool registry (dict form for legacy/internal)."""
     if not _registry:
         discover_all_tools()
     return _registry
@@ -41,6 +46,7 @@ def _register_module_tools(platform: str, mod_name: str):
                 tool_name = name
                 
             _registry[tool_name] = func
+            mcp.add_tool(func, name=tool_name)
     except ImportError as e:
         print(f"ImportError loading {platform}.{mod_name}: {e}")
 

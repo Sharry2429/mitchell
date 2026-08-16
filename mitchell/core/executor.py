@@ -26,7 +26,7 @@ from mitchell.core.agent_pool import (
 )
 
 from mitchell.providers.base import LLMResult
-from mitchell.providers.registry import active_provider
+from mitchell.providers.registry import cascading_call
 from mitchell.core.planner import PlanningError, create_plan
 from mitchell.core.tasks import Task, TaskState, TaskStep, list_tasks, task_all_terminal
 from mitchell.core.tool_provider import MCPToolProvider, ToolProvider
@@ -34,7 +34,7 @@ from mitchell.core.verify import verify_step  # hard import: missing => ImportEr
 
 # Sentinel for "use the real LLM client" — lets tests inject a deterministic call.
 async def _REAL_CALL(tier, messages, tools, task_id):
-    return await active_provider().call(messages=messages, tools=tools)
+    return await cascading_call(tier, messages=messages, tools=tools, task_id=task_id)
 
 
 def _safe_log_episode(task_id, kind, summary, **kw):

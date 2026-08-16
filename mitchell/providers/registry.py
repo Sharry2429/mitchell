@@ -1,7 +1,7 @@
 """
 Provider registry and active provider management.
 """
-from typing import Optional
+from typing import Optional, Any
 from mitchell.providers.base import Provider
 from mitchell.providers.groq import GroqProvider
 from mitchell.providers.aicredits import AiCreditsProvider
@@ -62,6 +62,19 @@ def cascade_order() -> list[Provider]:
             order.append(_providers[name])
             
     return order
+
+async def cascading_call(tier: str, messages: list[dict], tools: list[dict] = None, task_id: str = None) -> Any:
+    """Try providers in cascade order until one succeeds."""
+    last_error = None
+    for provider in cascade_order():
+        try:
+            return await provider.call(messages=messages, tools=tools)
+        except Exception as e:
+            last_error = e
+            print(f"Provider {provider.__class__.__name__} failed: {e}. Falling back...")
+            continue
+            
+    raise RuntimeError(f"All providers in cascade failed. Last error: {last_error}")
 
 import asyncio
 
