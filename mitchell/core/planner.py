@@ -1,13 +1,12 @@
 import json
 from mitchell.core.tasks import Task, TaskStep
-from mitchell.core.memory import (
-    find_cached_plan,
-    get_user_profile,
-    get_skills_log,
-    retrieve_schema,
-    log_episode,
-)
-from mitchell.core.llm_client import call
+from mitchell.providers.registry import cascading_call as call
+
+def find_cached_plan(instruction): return None
+def get_user_profile(): return "General User"
+def get_skills_log(): return "No custom skills"
+def retrieve_schema(instruction): return None
+def log_episode(*args, **kwargs): pass
 
 
 class PlanningError(Exception):
@@ -97,7 +96,7 @@ Each step should have 'description', 'action' (the tool namespace needed), and o
 
 
 async def plan_or_clarify(instruction: str, targets: list[str]) -> dict:
-    from mitchell.core.llm_client import call
+    from mitchell.providers.registry import cascading_call as call
     prompt = (
         f"Instruction: {instruction}\n"
         f"Targets: {targets}\n"
