@@ -9,6 +9,7 @@ from mitchell.core.result import MCPResult
 
 def get_active_notifications() -> MCPResult:
     """Gets currently active notifications by dumping notification service state."""
+    get_active_notifications._mcp_exclude = True
     try:
         output = adb.shell("dumpsys notification --noredact")
         # Basic parsing: look for lines with 'NotificationRecord' or similar.

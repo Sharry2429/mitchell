@@ -51,10 +51,18 @@ class ChatSession:
             
         return False
 
+from mitchell.core.fast_intent import resolve_intent
+from mitchell.core.warm_pool import pre_warm_pool
+from mitchell.providers.registry import warm_ping
+
 async def async_main():
     print("Initializing Mitchell...")
     load_providers()
     get_registry() # warm up registry
+    
+    # Pre-warm TLS and worker pool in the background
+    asyncio.create_task(warm_ping())
+    asyncio.create_task(pre_warm_pool())
     
     session = ChatSession()
     print("Mitchell CLI ready. Type /exit to quit.")
@@ -72,6 +80,18 @@ async def async_main():
             continue
             
         try:
+            # 1. Fast Path
+            fast_match = await resolve_intent(cmd)
+            if fast_match:
+                tool_name, args = fast_match
+                print(f"[Fast Path] Executing {tool_name}...")
+                registry = get_registry()
+                if tool_name in registry:
+                    res = registry[tool_name](**args)
+                    print(f"\n{res}")
+                    continue
+            
+            # 2. Orchestrator Path
             print("Executing...")
             result = await execute(cmd)
             print(f"\n{result}")

@@ -62,3 +62,15 @@ def cascade_order() -> list[Provider]:
             order.append(_providers[name])
             
     return order
+
+import asyncio
+
+async def warm_ping():
+    """Send a trivial keep-alive ping to the active provider to pre-warm the TLS connection."""
+    try:
+        provider = active_provider()
+        # A tiny prompt that the model can answer in 1 token
+        messages = [{"role": "user", "content": "Ping. Reply 'Pong'."}]
+        await provider.call(messages=messages, max_tokens=2)
+    except Exception:
+        pass

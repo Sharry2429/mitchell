@@ -34,34 +34,6 @@ def _save_wifi_ip(ip: str):
         pass
 
 
-_TAILSCALE_HOST = os.environ.get("SYSTEM_MCP_TAILSCALE_HOST")
-_TAILSCALE_PORT = os.environ.get("SYSTEM_MCP_TAILSCALE_PORT", "5555")
-
-
-def _connect_tailscale() -> str | None:
-    """Try connecting to the device over its Tailscale address, if configured."""
-    host = _TAILSCALE_HOST
-    if not host:
-        ts_config_path = os.path.expanduser("~/.mitchell_tailscale.json")
-        if os.path.exists(ts_config_path):
-            try:
-                with open(ts_config_path, "r") as f:
-                    host = json.load(f).get("SYSTEM_MCP_TAILSCALE_HOST")
-            except Exception:
-                pass
-
-    if not host:
-        return None
-    target = f"{host}:{_TAILSCALE_PORT}"
-    try:
-        result = subprocess.run(
-            ["adb", "connect", target], capture_output=True, text=True, timeout=10
-        )
-        if "connected" in result.stdout.lower() or "already" in result.stdout.lower():
-            return target
-    except Exception:
-        pass
-    return None
 
 
 def get_active_serial() -> str:
@@ -86,18 +58,7 @@ def get_active_serial() -> str:
             if "device" in line and "offline" not in line
         ]
 
-        if not devices:
-            ts_target = _connect_tailscale()
-            if ts_target:
-                result = subprocess.run(
-                    ["adb", "devices"], capture_output=True, text=True
-                )
-                lines = result.stdout.strip().split("\n")[1:]
-                devices = [
-                    line.split("\t")[0]
-                    for line in lines
-                    if "device" in line and "offline" not in line
-                ]
+
 
         if not devices:
             # Fallback to saved Wi-Fi IP
