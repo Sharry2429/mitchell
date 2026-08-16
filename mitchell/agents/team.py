@@ -12,17 +12,24 @@ _hive = get_hive()
 # In-memory roster of active team members for this session.
 _active_team = {}
 
+from mitchell.core.warm_pool import claim_worker
+
 def team_spawn(role: str, task: str, priority: str = "normal") -> str:
     """
     Spawn a teammate for a specific role and task.
     In v1, this will claim a warm pool worker (simulated here) and dispatch.
     Returns the agent_id.
     """
+    worker = claim_worker(role)
+    if not worker:
+        raise ValueError(f"Unknown or unsupported role: {role}")
+        
     agent_id = f"{role}-{uuid.uuid4().hex[:8]}"
     _active_team[agent_id] = {
         "role": role,
         "task": task,
-        "status": "starting"
+        "status": "starting",
+        "worker_state": worker
     }
     
     # Send the initial task message

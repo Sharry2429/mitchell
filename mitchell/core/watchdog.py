@@ -52,6 +52,15 @@ def check_thresholds(laptop_lt: int = LAPTOP_LOW, phone_lt: int = PHONE_LOW) -> 
     ph = phone_battery()
     if ph is not None and ph < phone_lt:
         alerts.append(f"[POWER] Phone at {ph}% < {phone_lt}%. Plug in soon.")
+        
+    try:
+        from mitchell.core.warm_pool import _idle_workers
+        for role, pool in _idle_workers.items():
+            if not pool:
+                alerts.append(f"[POOL] Worker pool empty for role: {role}")
+    except Exception:
+        pass
+        
     return alerts
 
 def proactive_alert(message: str) -> str:
