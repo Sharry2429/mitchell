@@ -1149,37 +1149,22 @@ def get_service_config(name: str) -> dict:
 
 # --- vdm.py ---
 
-__all__.extend([
-    "get_all_desktops",
-    "get_current_desktop",
-    "get_desktop_count",
-    "is_window_on_current_desktop",
-    "move_window_to_desktop",
-    "switch_desktop",
-])
-
-from mitchell.windows.core import vdm
-
-def get_all_desktops() -> list[dict[str, str]]:
-    """Get all virtual desktops."""
-    return vdm.get_all_desktops()
+import mitchell.windows.core.vdm as _vdm
 
 def get_current_desktop() -> dict[str, str]:
-    """Get the current virtual desktop info."""
-    return vdm.get_current_desktop()
+    return _vdm.get_current_desktop()
+
+def get_all_desktops() -> list[dict[str, str]]:
+    return _vdm.get_all_desktops()
 
 def get_desktop_count() -> int:
-    """Get the number of virtual desktops."""
-    return vdm.get_desktop_count()
+    return _vdm.get_desktop_count()
 
 def is_window_on_current_desktop(hwnd: int) -> bool:
-    """Check if a window is on the current virtual desktop."""
-    return vdm.is_window_on_current_desktop(hwnd)
-
-def move_window_to_desktop(hwnd: int, desktop_index: int) -> bool:
-    """Move a window to a specific virtual desktop."""
-    return vdm.move_window_to_desktop(hwnd, desktop_index)
+    return _vdm.is_window_on_current_desktop(hwnd)
 
 def switch_desktop(index: int) -> bool:
-    """Switch to a virtual desktop by index (0-based)."""
-    return vdm.switch_desktop(index)
+    return _vdm.switch_desktop(index)
+
+def move_window_to_desktop(hwnd: int, desktop_index: int) -> bool:
+    return _vdm.move_window_to_desktop(hwnd, desktop_index)

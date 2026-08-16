@@ -1,11 +1,11 @@
 """
-Unified MCP Server exposing the same tool registry.
+mitchell.mcp_server
+Unified MCP Server entrypoint.
 """
-from mitchell.core.tool_registry import mcp, discover_all_tools
+from mitchell.core.tool_registry import mcp
 
 def main():
-    discover_all_tools()
-    mcp.run()
+    mcp.run(transport="stdio")
 
 if __name__ == "__main__":
     main()

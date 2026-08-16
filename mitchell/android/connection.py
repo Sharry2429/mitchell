@@ -34,8 +34,6 @@ def _save_wifi_ip(ip: str):
         pass
 
 
-
-
 def get_active_serial() -> str:
     """Returns the serial of the active connected device, or raises DeviceOffline."""
     global _active_serial
@@ -57,8 +55,6 @@ def get_active_serial() -> str:
             for line in lines
             if "device" in line and "offline" not in line
         ]
-
-
 
         if not devices:
             # Fallback to saved Wi-Fi IP

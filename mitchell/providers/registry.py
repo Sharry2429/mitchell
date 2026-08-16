@@ -1,89 +1,55 @@
-"""
-Provider registry and active provider management.
-"""
-from typing import Optional, Any
+import logging
+from typing import List, Optional
 from mitchell.providers.base import Provider
 from mitchell.providers.groq import GroqProvider
 from mitchell.providers.aicredits import AiCreditsProvider
 
-_providers: dict[str, Provider] = {}
-_active_provider_name: Optional[str] = None
-_cascade: list[str] = ["groq", "aicredits"]
+logger = logging.getLogger("mitchell.providers.registry")
+
+_PROVIDERS: dict[str, Provider] = {}
+_CASCADE: List[str] = ["groq", "aicredits"]
+_ACTIVE_PROVIDER: Optional[str] = None
+_PINNED_MODEL: Optional[str] = None
+
+def register_provider(provider: Provider):
+    _PROVIDERS[provider.name.lower()] = provider
 
 def load_providers():
-    """Initialize the configured providers."""
-    global _providers
-    _providers["groq"] = GroqProvider()
-    _providers["aicredits"] = AiCreditsProvider()
-
-def get_provider(name: str) -> Optional[Provider]:
-    """Get a provider by name."""
-    if not _providers:
-        load_providers()
-    return _providers.get(name)
+    register_provider(GroqProvider())
+    register_provider(AiCreditsProvider())
 
 def active_provider() -> Provider:
-    """Get the currently active provider, or default to the first in cascade."""
-    if not _providers:
-        load_providers()
+    if _ACTIVE_PROVIDER and _ACTIVE_PROVIDER in _PROVIDERS:
+        return _PROVIDERS[_ACTIVE_PROVIDER]
+    
+    if _CASCADE and _CASCADE[0] in _PROVIDERS:
+        return _PROVIDERS[_CASCADE[0]]
         
-    if _active_provider_name and _active_provider_name in _providers:
-        return _providers[_active_provider_name]
-        
-    # Default to first available in cascade
-    for name in _cascade:
-        if name in _providers:
-            return _providers[name]
-            
-    raise RuntimeError("No providers configured or available.")
+    raise RuntimeError("No active provider found")
 
-def set_active(name: str) -> bool:
-    """Set the pinned active provider. Returns True if found."""
-    if not _providers:
-        load_providers()
-        
-    if name in _providers:
-        global _active_provider_name
-        _active_provider_name = name
-        return True
-    return False
+def set_active(name: str):
+    global _ACTIVE_PROVIDER
+    if name.lower() in _PROVIDERS:
+        _ACTIVE_PROVIDER = name.lower()
+    else:
+        raise ValueError(f"Unknown provider: {name}")
 
-def cascade_order() -> list[Provider]:
-    """Get providers in fallback cascade order. Pinned provider goes first."""
-    if not _providers:
-        load_providers()
-        
-    order = []
-    if _active_provider_name and _active_provider_name in _providers:
-        order.append(_providers[_active_provider_name])
-        
-    for name in _cascade:
-        if name != _active_provider_name and name in _providers:
-            order.append(_providers[name])
-            
-    return order
+def set_active_model(model: str):
+    global _PINNED_MODEL
+    _PINNED_MODEL = model
 
-async def cascading_call(tier: str, messages: list[dict], tools: list[dict] = None, task_id: str = None) -> Any:
-    """Try providers in cascade order until one succeeds."""
-    last_error = None
-    for provider in cascade_order():
-        try:
-            return await provider.call(messages=messages, tools=tools)
-        except Exception as e:
-            last_error = e
-            print(f"Provider {provider.__class__.__name__} failed: {e}. Falling back...")
-            continue
-            
-    raise RuntimeError(f"All providers in cascade failed. Last error: {last_error}")
+def get_active_model() -> Optional[str]:
+    return _PINNED_MODEL
 
-import asyncio
+def cascade_order() -> List[Provider]:
+    return [_PROVIDERS[name] for name in _CASCADE if name in _PROVIDERS]
 
-async def warm_ping():
-    """Send a trivial keep-alive ping to the active provider to pre-warm the TLS connection."""
+def warm_ping():
     try:
         provider = active_provider()
-        # A tiny prompt that the model can answer in 1 token
-        messages = [{"role": "user", "content": "Ping. Reply 'Pong'."}]
-        await provider.call(messages=messages, max_tokens=2)
-    except Exception:
-        pass
+        provider.warm_ping()
+    except Exception as e:
+        logger.warning(f"Warm ping failed: {e}")
+
+# Load providers on module import
+load_providers()

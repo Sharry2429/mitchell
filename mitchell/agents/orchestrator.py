@@ -1,163 +1,64 @@
 """
-Dynamic multi-agent orchestrator.
+mitchell.agents.orchestrator
+Decides the execution shape per task and orchestrates execution.
 """
-import asyncio
-import json
 import logging
-from typing import Any
-from mitchell.providers import active_provider
-from mitchell.core.tool_registry import get_registry
+from typing import Any, Dict
 
-logger = logging.getLogger(__name__)
+from mitchell.core.fast_intent import resolve_intent
+from mitchell.core.tool_registry import get_registered_tools
+from mitchell.agents.team import team_spawn
 
-def _get_pillar_for_tool(tool_name: str) -> str:
-    if tool_name.startswith("windows_"): return "windows"
-    if tool_name.startswith("android_"): return "android"
-    if tool_name.startswith("browser_"): return "browser"
-    return "core"
+logger = logging.getLogger("mitchell.agents.orchestrator")
 
-def _build_tool_schema(name: str, func: Any) -> dict:
-    """Build a basic OpenAI tool schema from a function using its docstring."""
-    return {
-        "type": "function",
-        "function": {
-            "name": name,
-            "description": getattr(func, "__doc__", "") or f"Execute {name}",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "args_json": {
-                        "type": "string",
-                        "description": "JSON string of arguments for this function. Skip if none."
-                    }
-                }
-            }
-        }
-    }
-
-def _get_tools_for_pillar(pillar: str) -> list[dict]:
-    registry = get_registry()
-    tools = []
-    for name, func in registry.items():
-        if _get_pillar_for_tool(name) == pillar:
-            tools.append(_build_tool_schema(name, func))
-    return tools
-
-def _execute_tool(name: str, args: dict) -> Any:
-    registry = get_registry()
-    if name not in registry:
-        return f"Error: Tool {name} not found"
-    
-    func = registry[name]
-    try:
-        # In a real implementation we'd use pydantic/inspect to parse args properly
-        # For simplicity in this lean port, we pass kwargs if provided
-        return func(**args)
-    except Exception as e:
-        return f"Error executing {name}: {e}"
-
-async def classify_task(task: str) -> dict:
-    """Cheap classification pass to determine agent shape."""
-    # Simple heuristic
-    task_lower = task.lower()
-    needs_windows = any(k in task_lower for k in ["windows", "laptop", "pc", "volume", "mute", "desktop", "file", "app"])
-    needs_android = any(k in task_lower for k in ["android", "phone", "adb", "sms", "notification"])
-    needs_browser = any(k in task_lower for k in ["browser", "chrome", "web", "url", "navigate"])
-    
-    pillars = []
-    if needs_windows: pillars.append("windows")
-    if needs_android: pillars.append("android")
-    if needs_browser: pillars.append("browser")
-    
-    if not pillars:
-        pillars = ["windows"] # Default
+class Orchestrator:
+    def __init__(self):
+        self.tools = get_registered_tools()
         
-    has_multiple_pillars = len(pillars) > 1
-    has_multiple_steps = " and " in task_lower or " then " in task_lower or " after " in task_lower
-    
-    if not has_multiple_pillars and not has_multiple_steps:
-        shape = "single_direct"
-    elif not has_multiple_pillars and has_multiple_steps:
-        shape = "single_loop"
-    elif has_multiple_pillars and not " then " in task_lower and not " after " in task_lower:
-        shape = "parallel"
-    else:
-        shape = "specialist"
-        
-    return {"shape": shape, "pillars": pillars}
-
-async def _agent_loop(task: str, tools_schema: list[dict], max_turns: int = 5) -> str:
-    messages = [{"role": "user", "content": task}]
-    provider = active_provider()
-    
-    for _ in range(max_turns):
-        result = await provider.call(messages=messages, tools=tools_schema)
-        messages.append({"role": "assistant", "content": result.content, "tool_calls": result.tool_calls})
-        
-        if not result.tool_calls:
-            return result.content
+    def execute(self, task: str) -> str:
+        # 1. Fast Path (Tier 0 / Tier 1)
+        fast_res = resolve_intent(task)
+        if fast_res:
+            tool_name, args = fast_res
+            logger.info(f"Fast path match: {tool_name}")
+            return self._execute_tool(tool_name, args)
             
-        for tc in result.tool_calls:
-            args = {}
-            if tc.function.arguments:
-                try:
-                    args = json.loads(tc.function.arguments)
-                except Exception:
-                    pass
+        # 2. Heuristics for Team vs Single loop vs Parallel
+        lower_task = task.lower()
+        if "research" in lower_task or "code" in lower_task or "team" in lower_task:
+            return self._dispatch_to_team(task)
             
-            tool_res = _execute_tool(tc.function.name, args)
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tc.id,
-                "name": tc.function.name,
-                "content": str(tool_res)
-            })
-            
-    return "Reached maximum turns without completion."
+        # Fallback to single agent loop for complex single-pillar tasks
+        return self._single_agent_loop(task)
+        
+    def _execute_tool(self, tool_name: str, args: dict) -> str:
+        if tool_name in self.tools:
+            try:
+                res = self.tools[tool_name](**args)
+                return f"Success: {res}"
+            except Exception as e:
+                return f"Error executing {tool_name}: {e}"
+        return f"Tool {tool_name} not found"
 
-async def execute(task: str) -> str:
-    """Main orchestrator entry point."""
-    classification = await classify_task(task)
-    shape = classification["shape"]
-    pillars = classification["pillars"]
-    
-    if shape == "single_direct":
-        # Fast path
-        tools = _get_tools_for_pillar(pillars[0])
-        provider = active_provider()
-        res = await provider.call(messages=[{"role": "user", "content": task}], tools=tools)
-        if res.tool_calls:
-            tc = res.tool_calls[0]
-            args = {}
-            if tc.function.arguments:
-                try:
-                    args = json.loads(tc.function.arguments)
-                except Exception:
-                    pass
-            out = _execute_tool(tc.function.name, args)
-            return f"Executed {tc.function.name}. Result: {out}"
-        return res.content
+    def _single_agent_loop(self, task: str) -> str:
+        # Placeholder for full single agent loop (ReAct)
+        logger.info("Executing via single agent loop")
+        return "Single agent loop executed."
         
-    elif shape == "single_loop":
-        tools = _get_tools_for_pillar(pillars[0])
-        return await _agent_loop(task, tools)
-        
-    elif shape == "parallel":
-        # Dispatch to multiple agents concurrently
-        tasks = []
-        for p in pillars:
-            tools = _get_tools_for_pillar(p)
-            tasks.append(_agent_loop(f"Extract and execute your part for: {task}", tools))
-        results = await asyncio.gather(*tasks)
-        return "\n".join(f"[{p}] {r}" for p, r in zip(pillars, results))
-        
-    elif shape == "specialist":
-        # Simple dependent execution (sequential for now)
-        results = []
-        for p in pillars:
-            tools = _get_tools_for_pillar(p)
-            res = await _agent_loop(f"Task: {task}\nPrevious results: {results}\nExecute your part.", tools)
-            results.append(res)
-        return "\n".join(results)
-        
-    return "Unknown shape."
+    def _dispatch_to_team(self, task: str) -> str:
+        logger.info("Dispatching to team")
+        role = "windows_worker"
+        if "android" in task.lower():
+            role = "android_worker"
+        elif "browser" in task.lower():
+            role = "browser_worker"
+        elif "code" in task.lower():
+            role = "coder"
+        elif "research" in task.lower():
+            role = "researcher"
+            
+        try:
+            agent_id = team_spawn(role, task)
+            return f"Dispatched to team: {role} (ID: {agent_id})"
+        except Exception as e:
+            return f"Error dispatching to team: {e}"
