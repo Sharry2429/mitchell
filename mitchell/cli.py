@@ -6,8 +6,11 @@ import argparse
 import sys
 import logging
 from mitchell.agents.orchestrator import Orchestrator
+from mitchell.core.daemon import ensure_api_running
 
 def main():
+    # Ensure the Mitchell local API router is running in the background
+    ensure_api_running()
     logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description="Mitchell Assistant CLI")
     parser.add_argument("task", nargs="+", help="Task to execute")

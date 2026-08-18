@@ -1,13 +1,12 @@
 import logging
 from typing import List, Optional
 from mitchell.providers.base import Provider
-from mitchell.providers.groq import GroqProvider
-from mitchell.providers.aicredits import AiCreditsProvider
+from mitchell.providers.mitchell_api import MitchellAPIProvider
 
 logger = logging.getLogger("mitchell.providers.registry")
 
 _PROVIDERS: dict[str, Provider] = {}
-_CASCADE: List[str] = ["groq", "aicredits"]
+_CASCADE: List[str] = ["mitchell_api"]
 _ACTIVE_PROVIDER: Optional[str] = None
 _PINNED_MODEL: Optional[str] = None
 
@@ -15,8 +14,7 @@ def register_provider(provider: Provider):
     _PROVIDERS[provider.name.lower()] = provider
 
 def load_providers():
-    register_provider(GroqProvider())
-    register_provider(AiCreditsProvider())
+    register_provider(MitchellAPIProvider())
 
 def active_provider() -> Provider:
     if _ACTIVE_PROVIDER and _ACTIVE_PROVIDER in _PROVIDERS:

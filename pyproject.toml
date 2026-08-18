@@ -17,3 +17,4 @@ dependencies = [
 [project.scripts]
 mitchell = "mitchell.cli:main"
 mitchell-mcp = "mitchell.mcp_server:main"
+mitchellapi = "mitchell.api:main"
