@@ -4,3 +4,7 @@ __pycache__/
 .env
 .pytest_cache/
 node_modules/
+scratch/
+ui/dist/
+ui_dist/
+dist/

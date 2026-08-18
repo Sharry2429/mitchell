@@ -432,7 +432,6 @@ def start_omniroute_background():
     except Exception as e:
         print(f"[setup] WARNING: Could not start Omniroute: {e}")
 
-
 def probe_url_sync(url, timeout=1.5):
     try:
         with httpx.Client(timeout=timeout) as client:

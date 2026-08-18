@@ -32,6 +32,9 @@ def set_active(name: str):
     else:
         raise ValueError(f"Unknown provider: {name}")
 
+def get_provider(name: str) -> Optional[Provider]:
+    return _PROVIDERS.get(name.lower())
+
 def set_active_model(model: str):
     global _PINNED_MODEL
     _PINNED_MODEL = model

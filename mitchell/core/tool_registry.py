@@ -8,18 +8,17 @@ import os
 
 from fastmcp import FastMCP
 
-# Initialize MCP Server instance
-mcp = FastMCP("System-MCP")
-
-def _register_pillar(platform: str):
-    """Auto-discovers and registers all tools in a given pillar."""
+def create_mcp_server(platform: str) -> FastMCP:
+    """Creates a FastMCP server and registers tools for the specified platform."""
+    mcp = FastMCP(f"Mitchell-{platform.capitalize()}-MCP")
+    
     # Find the directory of the pillar relative to the package root
     current_dir = os.path.dirname(os.path.abspath(__file__))
     package_dir = os.path.dirname(current_dir)
     pillar_dir = os.path.join(package_dir, platform)
     
     if not os.path.isdir(pillar_dir):
-        return
+        return mcp
         
     for filename in os.listdir(pillar_dir):
         if filename.endswith(".py") and not filename.startswith("__"):
@@ -37,7 +36,6 @@ def _register_pillar(platform: str):
                         continue
                     
                     if platform == "browser":
-                        # Browser module keeps natural browser_* names
                         tool_name = name if name.startswith("browser_") else f"browser_{name}"
                     else:
                         tool_name = f"{platform}_{mod_name}_{name}"
@@ -50,10 +48,5 @@ def _register_pillar(platform: str):
                         
             except ImportError as e:
                 print(f"ImportError loading {platform}.{mod_name}: {e}")
-
-def _register_all():
-    _register_pillar("windows")
-    _register_pillar("android")
-    _register_pillar("browser")
-
-_register_all()
+                
+    return mcp

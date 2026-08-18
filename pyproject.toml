@@ -16,5 +16,7 @@ dependencies = [
 
 [project.scripts]
 mitchell = "mitchell.cli:main"
-mitchell-mcp = "mitchell.mcp_server:main"
 mitchellapi = "mitchell.api:main"
+mitchell-windows-mcp = "mitchell.mcp_windows:main"
+mitchell-android-mcp = "mitchell.mcp_android:main"
+mitchell-browser-mcp = "mitchell.mcp_browser:main"
