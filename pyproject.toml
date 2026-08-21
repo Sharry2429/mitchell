@@ -5,18 +5,42 @@ build-backend = "hatchling.build"
 [project]
 name = "mitchell"
 version = "0.1.0"
-description = "Lean, fast multi-agent orchestration runtime for Windows, Android, and Browser control."
-authors = [{ name = "Mitchell", email = "mitchell@example.com" }]
+description = "Mitchell - Autonomous Multi-Agent Hive & Task Orchestration Framework"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Mitchell Team" }
+]
+keywords = ["agent", "orchestration", "hive", "llm", "automation", "browser", "playwright", "windows", "android"]
+
 dependencies = [
-    # Will be populated as we port, typical dependencies for LLM, MCP, etc.
-    "pydantic>=2.0.0",
-    "mcp>=0.1.0",
-    "httpx",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "rich>=13.7.0",
+    "typer>=0.9.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+    "loguru>=0.7.2",
+    "aiofiles>=23.2.1",
+    "orjson>=3.9.15",
+    "playwright>=1.42.0",
+    "websockets>=12.0",
+    "pywinauto>=0.6.8; platform_system=='Windows'",
+    "Pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
 ]
 
 [project.scripts]
-mitchell = "mitchell.cli:main"
-mitchellapi = "mitchell.api:main"
-mitchell-windows-mcp = "mitchell.mcp_windows:main"
-mitchell-android-mcp = "mitchell.mcp_android:main"
-mitchell-browser-mcp = "mitchell.mcp_browser:main"
+mitchell = "mitchell.cli:app"
+mitchell-do = "mitchell.cli:do"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mitchell"]

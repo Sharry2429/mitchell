@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mitchell AI Chat</title>
+  <link rel="stylesheet" href="chat.css">
+</head>
+<body>
+  <div class="chat-wrapper">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="status-indicator idle" id="status-dot"></div>
+        <div class="title-group">
+          <span class="header-title">Mitchell AI</span>
+          <span class="header-subtitle" id="status-text">Online (Idle)</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="events-toggle-btn" title="View Event Log">Events</button>
+        <button id="close-btn" title="Close Panel">✕</button>
+      </div>
+    </div>
+
+    <!-- Events Drawer (Collapsible) -->
+    <div class="events-drawer hidden" id="events-drawer">
+      <div class="events-header">
+        <span>Recent Event Log</span>
+        <button id="refresh-events-btn">↻</button>
+      </div>
+      <div class="events-list" id="events-list">
+        <div class="empty-events">No recent events.</div>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="messages-container" id="messages-container">
+      <div class="message assistant">
+        <div class="message-bubble">
+          <strong>Mitchell</strong>: Welcome! I'm connected to the Python Core and ready for browser tasks, tool execution, or Hive agent coordination.
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="quick-chip" data-cmd="list tools">🛠 Tools</button>
+      <button class="quick-chip" data-cmd="list agents">🐝 Agents</button>
+      <button class="quick-chip" data-cmd="agent browser_worker goto https://news.ycombinator.com">🌐 Browser Goto</button>
+    </div>
+
+    <!-- Input Form -->
+    <form class="input-form" id="chat-form">
+      <input
+        type="text"
+        id="chat-input"
+        placeholder="Type a goal or message..."
+        autocomplete="off"
+      />
+      <button type="submit" id="send-btn">Send</button>
+    </form>
+  </div>
+
+  <script src="chat.js"></script>
+</body>
+</html>

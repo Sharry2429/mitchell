@@ -1,62 +1,69 @@
-"""
-mitchell.core.config
-Central configuration for System-MCP.
-"""
+"""Configuration module for Mitchell using pydantic-settings."""
 
-import os
-from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
+from typing import Literal
 
-
-@dataclass
-class SystemMCPConfig:
-    safeguards: bool = True
-    unattended_mode: bool = False
-    action_timeout: float = 10.0
-    retry_attempts: int = 2
-    retry_delay: float = 0.5
-    screenshot_dir: str = "/tmp/system-mcp/screenshots"
-    # Android specific
-    reconnect_on_failure: bool = True
-    use_scrcpy: bool = False
-
-    @classmethod
-    def from_env(cls) -> "SystemMCPConfig":
-        def _get_bool(name: str, default: bool) -> bool:
-            val = os.environ.get(name)
-            if val is not None:
-                return val.lower() not in ("0", "false", "no")
-            return default
-
-        def _get_float(name: str, default: float) -> float:
-            val = os.environ.get(name)
-            return float(val) if val is not None else default
-
-        def _get_int(name: str, default: int) -> int:
-            val = os.environ.get(name)
-            return int(val) if val is not None else default
-
-        return cls(
-            safeguards=_get_bool("SYSTEM_MCP_SAFEGUARDS", True),
-            unattended_mode=_get_bool("SYSTEM_MCP_UNATTENDED", False),
-            action_timeout=_get_float("SYSTEM_MCP_ACTION_TIMEOUT", 10.0),
-            retry_attempts=_get_int("SYSTEM_MCP_RETRY_ATTEMPTS", 2),
-            retry_delay=_get_float("SYSTEM_MCP_RETRY_DELAY", 0.5),
-            screenshot_dir=os.environ.get(
-                "SYSTEM_MCP_SCREENSHOT_DIR", "/tmp/system-mcp/screenshots"
-            ),
-            reconnect_on_failure=_get_bool("SYSTEM_MCP_RECONNECT", True),
-            use_scrcpy=_get_bool("SYSTEM_MCP_USE_SCRCPY", False),
-        )
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-_global_config = SystemMCPConfig.from_env()
+class Settings(BaseSettings):
+    """Mitchell application configuration settings."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="MITCHELL_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    app_name: str = Field(
+        default="mitchell",
+        description="Name of the application",
+    )
+    debug: bool = Field(
+        default=False,
+        description="Enable debug mode",
+    )
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
+        default="INFO",
+        description="Logging level",
+    )
+    data_dir: Path = Field(
+        default=Path("data"),
+        description="Directory for application data and storage",
+    )
+    event_log_path: Path = Field(
+        default=Path("data/events.jsonl"),
+        description="Path to the JSONL event log file",
+    )
+    browser_headless: bool = Field(
+        default=True,
+        description="Run browser in headless mode by default",
+    )
+    browser_user_data_dir: Path = Field(
+        default=Path("data/browser_profiles"),
+        description="Base directory for persistent browser session profiles",
+    )
+    orb_host: str = Field(
+        default="127.0.0.1",
+        description="WebSocket bridge host for Electron Orb",
+    )
+    orb_port: int = Field(
+        default=8765,
+        description="WebSocket bridge port for Electron Orb",
+    )
 
 
-def get_config() -> SystemMCPConfig:
-    return _global_config
+@lru_cache
+def get_settings() -> Settings:
+    """Return a cached singleton instance of application settings."""
+    settings = Settings()
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    settings.browser_user_data_dir.mkdir(parents=True, exist_ok=True)
+    return settings
 
 
-def configure(**kwargs):
-    for k, v in kwargs.items():
-        if hasattr(_global_config, k):
-            setattr(_global_config, k, v)
+# Global settings instance for easy import
+settings: Settings = get_settings()

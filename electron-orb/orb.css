@@ -1,0 +1,205 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  background: transparent;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.orb-container {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-app-region: drag;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.orb-container:hover {
+  transform: scale(1.06);
+}
+
+.orb-container:active {
+  transform: scale(0.96);
+}
+
+/* Base Rings */
+.orb-outer-ring {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  opacity: 0.7;
+  transition: all 0.5s ease;
+}
+
+.orb-middle-ring {
+  position: absolute;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  opacity: 0.85;
+  transition: all 0.5s ease;
+}
+
+.orb-core {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.5s ease;
+}
+
+.orb-inner-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  animation: pulse-glow 3s infinite alternate;
+}
+
+.orb-icon {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  z-index: 10;
+}
+
+/* === STATUS STATES === */
+
+/* 1. IDLE: Soft Cyan / Deep Azure Glow */
+.orb-container.idle .orb-outer-ring {
+  border: 2px dashed rgba(56, 189, 248, 0.4);
+  animation: rotate-ring 20s linear infinite;
+}
+
+.orb-container.idle .orb-middle-ring {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.25) 0%, transparent 70%);
+}
+
+.orb-container.idle .orb-core {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+}
+
+.orb-container.idle .orb-inner-glow {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, transparent 65%);
+}
+
+/* 2. THINKING: Violet / Purple Aura */
+.orb-container.thinking .orb-outer-ring {
+  border: 2px solid rgba(168, 85, 247, 0.6);
+  border-top-color: transparent;
+  animation: rotate-ring 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.orb-container.thinking .orb-middle-ring {
+  border: 2px dashed rgba(192, 132, 252, 0.5);
+  animation: rotate-ring-reverse 3s linear infinite;
+}
+
+.orb-container.thinking .orb-core {
+  background: linear-gradient(135deg, #2e1065 0%, #1e1b4b 100%);
+  border: 1.5px solid rgba(192, 132, 252, 0.8);
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
+}
+
+.orb-container.thinking .orb-inner-glow {
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.5) 0%, transparent 65%);
+  animation: pulse-rapid 1s infinite alternate;
+}
+
+/* 3. WORKING: Emerald Green Active Pulse */
+.orb-container.working .orb-outer-ring {
+  border: 2px solid rgba(34, 197, 94, 0.7);
+  animation: rotate-ring 4s linear infinite, pulse-expand 2s infinite;
+}
+
+.orb-container.working .orb-core {
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+  border: 1.5px solid rgba(74, 222, 128, 0.9);
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+}
+
+.orb-container.working .orb-inner-glow {
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.4) 0%, transparent 65%);
+  animation: pulse-glow 1.5s infinite alternate;
+}
+
+/* 4. NEEDS_ATTENTION: Amber / Warning Glow */
+.orb-container.needs_attention .orb-outer-ring {
+  border: 2px solid rgba(245, 158, 11, 0.8);
+  animation: pulse-expand 1.2s infinite;
+}
+
+.orb-container.needs_attention .orb-core {
+  background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
+  border: 1.5px solid rgba(251, 191, 36, 0.9);
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.7);
+}
+
+.orb-container.needs_attention .orb-inner-glow {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.6) 0%, transparent 65%);
+  animation: pulse-rapid 0.8s infinite alternate;
+}
+
+/* 5. ERROR: Crimson Alert */
+.orb-container.error .orb-outer-ring {
+  border: 2px solid rgba(239, 68, 68, 0.8);
+  animation: pulse-expand 0.8s infinite;
+}
+
+.orb-container.error .orb-core {
+  background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%);
+  border: 1.5px solid rgba(248, 113, 113, 0.9);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.7);
+}
+
+/* === KEYFRAME ANIMATIONS === */
+@keyframes rotate-ring {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotate-ring-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(0.9); opacity: 0.5; }
+  100% { transform: scale(1.1); opacity: 0.9; }
+}
+
+@keyframes pulse-rapid {
+  0% { transform: scale(0.85); opacity: 0.4; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes pulse-expand {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 0.4; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
