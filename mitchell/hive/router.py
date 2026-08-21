@@ -1,4 +1,4 @@
-"""Hive router for registering agents and dispatching messages."""
+"""Hive router for registering agents and dispatching messages across all pillars."""
 
 from typing import Any, Dict, List, Optional
 from mitchell.core.logging import logger
@@ -6,6 +6,7 @@ from mitchell.hive.agents.android_worker import AndroidWorkerAgent
 from mitchell.hive.agents.base import BaseAgent
 from mitchell.hive.agents.browser_worker import BrowserWorkerAgent
 from mitchell.hive.agents.echo import EchoAgent
+from mitchell.hive.agents.efficiency_worker import EfficiencyWorkerAgent
 from mitchell.hive.agents.windows_worker import WindowsWorkerAgent
 
 
@@ -19,6 +20,7 @@ class HiveRouter:
         self.register_agent(BrowserWorkerAgent())
         self.register_agent(WindowsWorkerAgent())
         self.register_agent(AndroidWorkerAgent())
+        self.register_agent(EfficiencyWorkerAgent())
 
     def register_agent(self, agent: BaseAgent) -> None:
         """Register an agent in the Hive registry."""

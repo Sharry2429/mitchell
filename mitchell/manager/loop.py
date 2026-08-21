@@ -1,4 +1,4 @@
-"""Manager execution loop, memory management, Hive coordination, and Skill execution."""
+"""Full Manager Decision Loop integrating Thinking, Planning, Critic, LLM Council, Memory, and Hive."""
 
 import asyncio
 import inspect
@@ -6,10 +6,16 @@ import time
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
+from mitchell.core.cost import cost_tracker
 from mitchell.core.event_log import EventLog, event_log as default_event_log
+from mitchell.core.llm import model_router
 from mitchell.core.logging import logger
 from mitchell.hive.router import HiveRouter, hive_router as default_hive_router
+from mitchell.manager.classifier import GoalClassifier, goal_classifier as default_classifier
+from mitchell.manager.council import LLMCouncil, llm_council as default_council
+from mitchell.manager.critic import PlanCritic, plan_critic as default_critic
 from mitchell.manager.intent import Intent, parse_fast_intent
+from mitchell.manager.planner import TaskGraph, TaskPlanner, task_planner as default_planner
 from mitchell.memory.episodic import EpisodicMemory, episodic_memory as default_episodic_memory
 from mitchell.memory.long_term import LongTermMemory, long_term_memory as default_long_term_memory
 from mitchell.memory.self_model import SelfModel, self_model as default_self_model
@@ -26,7 +32,7 @@ class Message(BaseModel):
 
 
 class Manager:
-    """Core Manager coordinating short/long-term memory, self-model, skills, Hive agents, and tools."""
+    """Full Manager Decision Loop coordinating Thinking, Planning, Memory, Hive, and Cloud LLM Routing."""
 
     def __init__(
         self,
@@ -39,6 +45,10 @@ class Manager:
         self_mod: Optional[SelfModel] = None,
         skills: Optional[SkillLibrary] = None,
         skill_exec: Optional[SkillExecutor] = None,
+        classifier: Optional[GoalClassifier] = None,
+        planner: Optional[TaskPlanner] = None,
+        critic: Optional[PlanCritic] = None,
+        council: Optional[LLMCouncil] = None,
     ) -> None:
         self.memory_limit = memory_limit
         self.memory: List[Message] = []
@@ -50,6 +60,11 @@ class Manager:
         self.self_model = self_mod or default_self_model
         self.skills = skills or default_skill_library
         self.skill_executor = skill_exec or default_skill_executor
+        self.classifier = classifier or default_classifier
+        self.planner = planner or default_planner
+        self.critic = critic or default_critic
+        self.council = council or default_council
+        self.router = model_router
 
     def add_message(self, role: str, content: str) -> None:
         """Add a message to short-term memory, keeping the last N messages."""
@@ -66,48 +81,100 @@ class Manager:
         self.memory.clear()
 
     def receive(self, message: str) -> str:
-        """Process incoming user message, log event, execute intents/skills, and record episode."""
+        """Execute the Full Manager Decision Loop for incoming goals."""
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    return pool.submit(asyncio.run, self._async_receive(message)).result()
+            return loop.run_until_complete(self._async_receive(message))
+        except Exception:
+            return asyncio.run(self._async_receive(message))
+
+    async def _async_receive(self, message: str) -> str:
+        """Asynchronous decision loop."""
         start_time = time.time()
         logger.info("Manager received: {}", message)
         self.add_message(role="user", content=message)
         self.event_log.log_event("user_message", source="cli", data={"message": message})
 
-        # 1. Fast Intent path (rule-based without LLM)
-        intent = parse_fast_intent(message)
         tools_used: List[str] = []
+
+        # 1. Fast Intent Path (rule-based shortcut)
+        intent = parse_fast_intent(message)
         if intent:
             response = self._handle_fast_intent(intent, tools_used=tools_used)
-        else:
-            # 2. Contextual check: query memory and skills for relevant assistance
-            memory_matches = self.long_term.search(message, top_k=2)
-            skill_matches = self.skills.search_skills(message, top_k=2)
+            duration = round(time.time() - start_time, 2)
+            self._finalize_run(message, response, tools_used, duration)
+            return response
 
-            context_hints = []
-            if memory_matches:
-                context_hints.append(f"Memory: {memory_matches[0]['text']}")
-            if skill_matches:
-                context_hints.append(f"Suggested Skill: {skill_matches[0].name}")
+        # 2. Context Retrieval (RAG over Long-Term Memory & Skill Library)
+        mem_matches = self.long_term.search(message, top_k=2)
+        skill_matches = self.skills.search_skills(message, top_k=2)
 
-            hint_str = f" [Context: {' | '.join(context_hints)}]" if context_hints else ""
-
-            # Fallback placeholder until full Phase 4 LLM planner
-            response = f"LLM call not implemented yet. You said: {message}{hint_str}"
-            self.event_log.log_event("fallback_executed", source="manager", data={"message": message})
-
-        self.add_message(role="assistant", content=response)
-        duration = round(time.time() - start_time, 2)
-
-        # Record Episode in Episodic Memory
-        self.episodic.record(
-            goal=message,
-            status="success" if not response.startswith("Error") else "failed",
-            tools_used=tools_used,
-            outcome=response[:200],
-            duration_s=duration,
+        # 3. Goal Classification
+        classification = self.classifier.classify(message)
+        logger.info(
+            "Manager: Goal classified as '{}' ({}), Requires Council: {}",
+            classification.domain,
+            classification.complexity,
+            classification.requires_council,
         )
 
-        logger.debug("Manager response: {}", response)
+        # 4. Structured Plan Synthesis (TaskGraph)
+        plan = await self.planner.create_plan(
+            goal=message,
+            classification=classification,
+            memory_context=mem_matches,
+        )
+
+        # 5. Critic Pass (Safety & Karpathy principles check)
+        critic_review = self.critic.evaluate(plan)
+        if not critic_review.approved:
+            response = f"Plan rejected by safety critic: {', '.join(critic_review.critiques)}"
+            duration = round(time.time() - start_time, 2)
+            self._finalize_run(message, response, tools_used, duration)
+            return response
+
+        # 6. Selective LLM Council (Triggered only on high-stakes / ambiguous tasks)
+        if classification.requires_council:
+            council_res = await self.council.deliberate(topic=message, proposed_action=str(plan.nodes))
+            if not council_res.approved_for_execution:
+                response = f"Council declined action: {council_res.chairman_summary}"
+                duration = round(time.time() - start_time, 2)
+                self._finalize_run(message, response, tools_used, duration)
+                return response
+
+        # 7. Execute Subtasks through Hive Workers
+        results: List[str] = []
+        for node in plan.nodes:
+            logger.info("Manager dispatching subtask '{}' to Hive agent '{}'", node.title, node.target_agent)
+            tools_used.append(node.target_agent)
+            agent_res = self.hive.send_message(
+                agent_id=node.target_agent,
+                message=node.payload or node.action,
+                sender="manager",
+            )
+            results.append(f"[{node.title}]: {agent_res}")
+
+        response = "\n".join(results) if results else "Execution completed."
+        duration = round(time.time() - start_time, 2)
+        self._finalize_run(message, response, tools_used, duration)
         return response
+
+    def _finalize_run(self, message: str, response: str, tools_used: List[str], duration: float) -> None:
+        """Record outcome, update memory, and log telemetry."""
+        self.add_message(role="assistant", content=response)
+        cost_summary = cost_tracker.get_summary()
+
+        self.episodic.record(
+            goal=message,
+            status="success" if not response.startswith("Error") and not response.startswith("Plan rejected") else "failed",
+            tools_used=tools_used,
+            outcome=response[:300],
+            duration_s=duration,
+        )
 
     def _handle_fast_intent(self, intent: Intent, tools_used: Optional[List[str]] = None) -> str:
         """Handle recognized fast intents."""
@@ -125,6 +192,7 @@ class Manager:
                 "  • remember <category> <key> <content>: Save to Long-Term Memory\n"
                 "  • recall <category> <key>: Recall from Long-Term Memory\n"
                 "  • self model: Show Mitchell's capabilities and stats\n"
+                "  • cost / budget: Show token usage and cost in INR\n"
                 "  • list agents: List all registered Hive agents\n"
                 "  • agent <id> <msg>: Send message to Hive agent\n"
                 "  • list events: Show recent event log entries\n"
@@ -185,9 +253,11 @@ class Manager:
 
         if intent.action_type == "self_model":
             caps = self.self_model.list_all()
+            cost = cost_tracker.get_summary()
             lines = ["Self-Model Capabilities & Confidence:"]
             for c in caps:
                 lines.append(f"  • {c.capability_name} ({c.category}) | Confidence: {c.confidence:.2f} | Success Rate: {c.success_rate}%")
+            lines.append(f"\nCost Status: Today {cost['today_spent_inr']} / Total {cost['total_spent_inr']} (Budget: {cost['budget_status']})")
             return "\n".join(lines)
 
         if intent.action_type == "list_agents":
@@ -235,7 +305,7 @@ class Manager:
         self.event_log.log_event(
             "hive_response",
             source=agent_id,
-            data={"response": result},
+            data={"response": str(result)[:300]},
         )
         return str(result)
 

@@ -1,9 +1,10 @@
-"""Mitchell Hive agents package."""
+"""Mitchell Hive agents package across all pillars and roles."""
 
 from mitchell.hive.agents.android_worker import AndroidWorkerAgent
 from mitchell.hive.agents.base import BaseAgent
 from mitchell.hive.agents.browser_worker import BrowserWorkerAgent
 from mitchell.hive.agents.echo import EchoAgent
+from mitchell.hive.agents.efficiency_worker import EfficiencyWorkerAgent
 from mitchell.hive.agents.windows_worker import WindowsWorkerAgent
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "BrowserWorkerAgent",
     "WindowsWorkerAgent",
     "AndroidWorkerAgent",
+    "EfficiencyWorkerAgent",
 ]
