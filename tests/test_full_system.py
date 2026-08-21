@@ -128,3 +128,30 @@ def test_phase5_reliability_and_teaching() -> None:
     fin = teaching_watcher.finalize_skill()
     assert fin["status"] == "success"
     assert skill_library.get_skill("taught_test_skill") is not None
+
+
+def test_mcp_server() -> None:
+    """Verify MCP Server JSON-RPC handlers for initialize, tools/list, and tools/call."""
+    from mitchell.mcp_server import MitchellMCPServer
+
+    server = MitchellMCPServer()
+
+    # 1. Initialize
+    init_res = asyncio.run(server.handle_request({"id": 1, "method": "initialize"}))
+    assert init_res["result"]["serverInfo"]["name"] == "mitchell-mcp"
+
+    # 2. Tools List
+    tools_res = asyncio.run(server.handle_request({"id": 2, "method": "tools/list"}))
+    tool_names = [t["name"] for t in tools_res["result"]["tools"]]
+    assert "echo" in tool_names
+    assert "browser_goto" in tool_names
+    assert "skill_execute" in tool_names
+
+    # 3. Tools Call
+    call_res = asyncio.run(server.handle_request({
+        "id": 3,
+        "method": "tools/call",
+        "params": {"name": "echo", "arguments": {"message": "MCP Test Output"}},
+    }))
+    assert call_res["result"]["content"][0]["text"] == "MCP Test Output"
+

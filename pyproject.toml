@@ -41,6 +41,7 @@ dev = [
 [project.scripts]
 mitchell = "mitchell.cli:app"
 mitchell-do = "mitchell.cli:do"
+mitchell-mcp = "mitchell.mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["mitchell"]
