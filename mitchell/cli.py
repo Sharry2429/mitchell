@@ -228,6 +228,38 @@ def cost_command() -> None:
     console.print(table)
 
 
+@app.command(name="serve", help="Start the Mitchell REST API & Webhook server.")
+def serve_command(
+    host: str = typer.Option("127.0.0.1", help="Host address for HTTP REST API"),
+    port: int = typer.Option(8000, help="Port for HTTP REST API"),
+) -> None:
+    """Start REST API server."""
+    from mitchell.api.server import MitchellAPIServer
+
+    console.print(f"[bold green]Starting Mitchell REST API Server on http://{host}:{port}...[/bold green]")
+    server = MitchellAPIServer(host=host, port=port)
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        console.print("\n[dim]REST API Server stopped.[/dim]")
+
+
+@app.command(name="research", help="Run autonomous deep web research on a topic.")
+def research_command(
+    topic: str = typer.Argument(..., help="Research topic or question to investigate"),
+) -> None:
+    """Execute deep research command."""
+    from mitchell.browser.researcher import deep_researcher
+
+    console.print(f"[bold cyan]Initiating deep web research on:[/bold cyan] [white]'{topic}'[/white]...")
+    report = asyncio.run(deep_researcher.research(topic=topic))
+    console.print(Panel(f"[bold green]Research Briefing: {report.topic}[/bold green]\n\n{report.summary}", border_style="cyan"))
+    console.print(f"[bold cyan]Sources Inspected ({len(report.sources)}):[/bold cyan]")
+    for s in report.sources:
+        console.print(f"  • {s.url} ({'✓ Verified' if s.success else '✗ Failed'})")
+
+
+
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""
     if goal is None:

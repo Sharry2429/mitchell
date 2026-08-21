@@ -155,3 +155,14 @@ def test_mcp_server() -> None:
     }))
     assert call_res["result"]["content"][0]["text"] == "MCP Test Output"
 
+
+def test_deep_researcher() -> None:
+    """Verify Deep Web Researcher execution and synthesis."""
+    from mitchell.browser.researcher import deep_researcher
+
+    report = asyncio.run(deep_researcher.research(topic="Artificial Intelligence", max_sources=1))
+    assert report.topic == "Artificial Intelligence"
+    assert len(report.key_findings) > 0
+    assert len(report.sources) >= 1
+
+

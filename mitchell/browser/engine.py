@@ -201,4 +201,6 @@ class BrowserEngine:
         return await session_manager.close_session(self.session_id)
 
 
-__all__ = ["BrowserEngine"]
+browser_engine = BrowserEngine()
+
+__all__ = ["BrowserEngine", "browser_engine"]
