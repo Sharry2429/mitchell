@@ -1,7 +1,8 @@
-"""Manager execution loop, memory management, and Hive orchestration."""
+"""Manager execution loop, memory management, Hive coordination, and Skill execution."""
 
 import asyncio
 import inspect
+import time
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
@@ -9,6 +10,11 @@ from mitchell.core.event_log import EventLog, event_log as default_event_log
 from mitchell.core.logging import logger
 from mitchell.hive.router import HiveRouter, hive_router as default_hive_router
 from mitchell.manager.intent import Intent, parse_fast_intent
+from mitchell.memory.episodic import EpisodicMemory, episodic_memory as default_episodic_memory
+from mitchell.memory.long_term import LongTermMemory, long_term_memory as default_long_term_memory
+from mitchell.memory.self_model import SelfModel, self_model as default_self_model
+from mitchell.skills.executor import SkillExecutor, skill_executor as default_skill_executor
+from mitchell.skills.library import SkillLibrary, skill_library as default_skill_library
 from mitchell.tools.registry import Tool, ToolRegistry, tool_registry as default_tool_registry
 
 
@@ -20,7 +26,7 @@ class Message(BaseModel):
 
 
 class Manager:
-    """Core Manager coordinating memory, intents, Hive agents, tools, and event logging."""
+    """Core Manager coordinating short/long-term memory, self-model, skills, Hive agents, and tools."""
 
     def __init__(
         self,
@@ -28,12 +34,22 @@ class Manager:
         tool_registry: Optional[ToolRegistry] = None,
         hive: Optional[HiveRouter] = None,
         events: Optional[EventLog] = None,
+        long_term: Optional[LongTermMemory] = None,
+        episodic: Optional[EpisodicMemory] = None,
+        self_mod: Optional[SelfModel] = None,
+        skills: Optional[SkillLibrary] = None,
+        skill_exec: Optional[SkillExecutor] = None,
     ) -> None:
         self.memory_limit = memory_limit
         self.memory: List[Message] = []
         self.tool_registry = tool_registry or default_tool_registry
         self.hive = hive or default_hive_router
         self.event_log = events or default_event_log
+        self.long_term = long_term or default_long_term_memory
+        self.episodic = episodic or default_episodic_memory
+        self.self_model = self_mod or default_self_model
+        self.skills = skills or default_skill_library
+        self.skill_executor = skill_exec or default_skill_executor
 
     def add_message(self, role: str, content: str) -> None:
         """Add a message to short-term memory, keeping the last N messages."""
@@ -50,25 +66,50 @@ class Manager:
         self.memory.clear()
 
     def receive(self, message: str) -> str:
-        """Process incoming user message, log event, and generate response."""
+        """Process incoming user message, log event, execute intents/skills, and record episode."""
+        start_time = time.time()
         logger.info("Manager received: {}", message)
         self.add_message(role="user", content=message)
         self.event_log.log_event("user_message", source="cli", data={"message": message})
 
         # 1. Fast Intent path (rule-based without LLM)
         intent = parse_fast_intent(message)
+        tools_used: List[str] = []
         if intent:
-            response = self._handle_fast_intent(intent)
+            response = self._handle_fast_intent(intent, tools_used=tools_used)
         else:
-            # 2. Fallback placeholder
-            response = f"LLM call not implemented yet. You said: {message}"
+            # 2. Contextual check: query memory and skills for relevant assistance
+            memory_matches = self.long_term.search(message, top_k=2)
+            skill_matches = self.skills.search_skills(message, top_k=2)
+
+            context_hints = []
+            if memory_matches:
+                context_hints.append(f"Memory: {memory_matches[0]['text']}")
+            if skill_matches:
+                context_hints.append(f"Suggested Skill: {skill_matches[0].name}")
+
+            hint_str = f" [Context: {' | '.join(context_hints)}]" if context_hints else ""
+
+            # Fallback placeholder until full Phase 4 LLM planner
+            response = f"LLM call not implemented yet. You said: {message}{hint_str}"
             self.event_log.log_event("fallback_executed", source="manager", data={"message": message})
 
         self.add_message(role="assistant", content=response)
+        duration = round(time.time() - start_time, 2)
+
+        # Record Episode in Episodic Memory
+        self.episodic.record(
+            goal=message,
+            status="success" if not response.startswith("Error") else "failed",
+            tools_used=tools_used,
+            outcome=response[:200],
+            duration_s=duration,
+        )
+
         logger.debug("Manager response: {}", response)
         return response
 
-    def _handle_fast_intent(self, intent: Intent) -> str:
+    def _handle_fast_intent(self, intent: Intent, tools_used: Optional[List[str]] = None) -> str:
         """Handle recognized fast intents."""
         if intent.action_type == "exit":
             self.event_log.log_event("session_exit", source="manager")
@@ -79,9 +120,13 @@ class Manager:
                 "Available Commands:\n"
                 "  • help: Show this help message\n"
                 "  • list tools / tools: List all registered tools\n"
-                "  • call tool <name> <args>: Execute a tool (e.g. 'call tool echo hello')\n"
-                "  • list agents / agents: List all registered Hive agents\n"
-                "  • agent <id> <msg>: Send a message to a Hive agent (e.g. 'agent echo_agent hello')\n"
+                "  • list skills / skills: List procedural skills\n"
+                "  • run skill <name> <params>: Execute a skill\n"
+                "  • remember <category> <key> <content>: Save to Long-Term Memory\n"
+                "  • recall <category> <key>: Recall from Long-Term Memory\n"
+                "  • self model: Show Mitchell's capabilities and stats\n"
+                "  • list agents: List all registered Hive agents\n"
+                "  • agent <id> <msg>: Send message to Hive agent\n"
                 "  • list events: Show recent event log entries\n"
                 "  • exit / quit: Exit the session"
             )
@@ -93,6 +138,56 @@ class Manager:
             lines = ["Registered Tools:"]
             for tool in tools:
                 lines.append(f"  • {tool['name']}: {tool['description']}")
+            return "\n".join(lines)
+
+        if intent.action_type == "list_skills":
+            skills = self.skills.list_skills()
+            if not skills:
+                return "No skills currently in library."
+            lines = ["Registered Procedural Skills:"]
+            for s in skills:
+                lines.append(f"  • {s.name} (v{s.version}, {len(s.steps)} steps): {s.description}")
+            return "\n".join(lines)
+
+        if intent.action_type == "run_skill":
+            if tools_used is not None:
+                tools_used.append(f"skill:{intent.skill_name}")
+            res = self.skill_executor.execute(intent.skill_name, parameters=intent.parameters)
+            if res.get("success"):
+                return f"[Skill: {intent.skill_name}] Completed in {res.get('duration_s')}s"
+            return f"[Skill: {intent.skill_name}] Failed: {res.get('error')}"
+
+        if intent.action_type == "remember":
+            params = intent.parameters
+            cat = params.get("category", "general")
+            k = params.get("key", "info")
+            content = params.get("content", "")
+            entry = self.long_term.remember(category=cat, key=k, content=content)
+            return f"[Memory] Stored [{entry.category}] {entry.key} -> '{entry.content}'"
+
+        if intent.action_type == "recall":
+            params = intent.parameters
+            if "query" in params:
+                matches = self.long_term.search(params["query"], top_k=3)
+                if not matches:
+                    return f"No memories found matching '{params['query']}'"
+                lines = [f"Found {len(matches)} matching memories:"]
+                for m in matches:
+                    lines.append(f"  • {m['text']} (relevance: {m['similarity']:.2f})")
+                return "\n".join(lines)
+            else:
+                cat = params.get("category", "")
+                k = params.get("key", "")
+                val = self.long_term.recall(cat, k)
+                if val:
+                    return f"[Memory: {cat}:{k}] {val}"
+                return f"No memory found for [{cat}:{k}]"
+
+        if intent.action_type == "self_model":
+            caps = self.self_model.list_all()
+            lines = ["Self-Model Capabilities & Confidence:"]
+            for c in caps:
+                lines.append(f"  • {c.capability_name} ({c.category}) | Confidence: {c.confidence:.2f} | Success Rate: {c.success_rate}%")
             return "\n".join(lines)
 
         if intent.action_type == "list_agents":
@@ -114,9 +209,13 @@ class Manager:
             return "\n".join(lines)
 
         if intent.action_type == "hive_message":
+            if tools_used is not None:
+                tools_used.append(f"agent:{intent.agent_name}")
             return self.send_to_hive(intent.agent_name, intent.parameters.get("message", ""))
 
         if intent.action_type == "call_tool":
+            if tools_used is not None:
+                tools_used.append(intent.tool_name or "unknown")
             return self.call_tool(intent.tool_name, intent.parameters)
 
         return f"Unhandled intent: {intent.action_type}"
@@ -180,7 +279,7 @@ class Manager:
                 accepted_params[param_name] = parameters[param_name]
             elif len(sig.parameters) == 1 and (
                 param.default == inspect.Parameter.empty
-                or param_name in ("input", "text", "message", "query", "value")
+                or param_name in ("input", "text", "message", "query", "value", "cmd", "url", "title")
             ):
                 if "raw" in parameters:
                     accepted_params[param_name] = parameters["raw"]
