@@ -7,6 +7,7 @@ from mitchell.hive.agents.base import BaseAgent
 from mitchell.hive.agents.browser_worker import BrowserWorkerAgent
 from mitchell.hive.agents.echo import EchoAgent
 from mitchell.hive.agents.efficiency_worker import EfficiencyWorkerAgent
+from mitchell.hive.agents.vision_worker import VisionWorkerAgent
 from mitchell.hive.agents.windows_worker import WindowsWorkerAgent
 
 
@@ -21,6 +22,7 @@ class HiveRouter:
         self.register_agent(WindowsWorkerAgent())
         self.register_agent(AndroidWorkerAgent())
         self.register_agent(EfficiencyWorkerAgent())
+        self.register_agent(VisionWorkerAgent())
 
     def register_agent(self, agent: BaseAgent) -> None:
         """Register an agent in the Hive registry."""

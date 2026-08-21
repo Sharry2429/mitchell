@@ -166,3 +166,18 @@ def test_deep_researcher() -> None:
     assert len(report.sources) >= 1
 
 
+def test_vision_grounding() -> None:
+    """Verify Vision Grounder and Vision Worker Agent in Hive."""
+    from mitchell.vision import visual_grounder
+    from mitchell.hive import hive_router
+
+    coords = visual_grounder.find_coordinates("close button")
+    assert coords is not None
+    assert coords[0] > 0 and coords[1] > 0
+
+    assert hive_router.get_agent("vision_worker") is not None
+    vis_res = hive_router.send_message("vision_worker", "locate search bar", sender="test")
+    assert vis_res.get("status") == "success"
+
+
+
