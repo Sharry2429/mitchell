@@ -6,7 +6,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 
 from mitchell.browser.mouse import generate_bezier_curve
