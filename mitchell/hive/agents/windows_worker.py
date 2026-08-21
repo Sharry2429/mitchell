@@ -1,6 +1,6 @@
 """Windows Worker Agent executing desktop and UI automation tasks in the Hive."""
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 from mitchell.core.event_log import event_log
 from mitchell.core.logging import logger
 from mitchell.hive.agents.base import BaseAgent

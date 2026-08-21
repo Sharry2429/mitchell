@@ -1,4 +1,4 @@
-"""CLI entry points for Mitchell wired to Manager, Browser Pillar, and Orb Bridge."""
+"""CLI entry points for Mitchell wired to Manager, Pillars, Orb Bridge, Teaching, and Recovery."""
 
 import asyncio
 import sys
@@ -7,6 +7,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
 from mitchell.manager import Manager
 
@@ -41,9 +42,10 @@ def interactive() -> None:
         "[dim]Autonomous Multi-Agent Hive & Task Orchestration Framework[/dim]\n\n"
         "Type your task or command to begin.\n"
         "Commands:\n"
-        "  • [bold yellow]help[/bold yellow] / [bold yellow]list tools[/bold yellow] / [bold yellow]list agents[/bold yellow] / [bold yellow]list events[/bold yellow]\n"
+        "  • [bold yellow]help[/bold yellow] / [bold yellow]tools[/bold yellow] / [bold yellow]skills[/bold yellow] / [bold yellow]agents[/bold yellow] / [bold yellow]self model[/bold yellow] / [bold yellow]cost[/bold yellow]\n"
         "  • [bold yellow]agent browser_worker goto <url>[/bold yellow]\n"
-        "  • [bold yellow]call tool browser_goto url=<url>[/bold yellow]\n"
+        "  • [bold yellow]agent windows_worker launch <app>[/bold yellow]\n"
+        "  • [bold yellow]agent android_worker list_devices[/bold yellow]\n"
         "  • [bold yellow]exit[/bold yellow] / [bold yellow]quit[/bold yellow] to leave.",
         title="[bold green]Welcome to Mitchell[/bold green]",
         border_style="bright_blue",
@@ -139,6 +141,91 @@ def browser_command(
     cmd = f"agent browser_worker {action} {target or ''}".strip()
     response = manager.receive(cmd)
     console.print(f"[bold cyan][Browser Worker][/bold cyan] {response}")
+
+
+@app.command(name="teach", help="Start interactive 'Watch Me' teaching session.")
+def teach_command(
+    skill_name: str = typer.Argument(..., help="Name of the skill to teach"),
+    description: str = typer.Option("", help="Description of the skill"),
+) -> None:
+    """Interactive teaching mode."""
+    from mitchell.teaching.watcher import teaching_watcher
+
+    console.print(f"[bold green]Starting 'Watch Me' teaching mode for skill '{skill_name}'...[/bold green]")
+    res = teaching_watcher.start_session(skill_name, description=description)
+    console.print(f"[cyan]{res['message']}[/cyan]")
+    console.print("[dim]Enter tool calls or actions sequentially. Type 'done' to finalize or 'cancel' to abort.[/dim]")
+
+    while True:
+        try:
+            line = console.input("[bold yellow]teach>[/bold yellow] ").strip()
+            if not line:
+                continue
+            if line.lower() == "cancel":
+                teaching_watcher.is_active = False
+                console.print("[dim]Teaching session cancelled.[/dim]")
+                break
+            if line.lower() == "done":
+                fin = teaching_watcher.finalize_skill()
+                console.print(f"[bold green]{fin['message']}[/bold green]")
+                break
+
+            # Record step as tool or agent command
+            parts = line.split(maxsplit=1)
+            target = parts[0]
+            params = {"raw": parts[1]} if len(parts) > 1 else {}
+            step_res = teaching_watcher.record_step(action_type="tool", target=target, params=params)
+            console.print(f"  [dim]Recorded step {step_res.get('step_index')}: {target}[/dim]")
+        except (KeyboardInterrupt, EOFError):
+            teaching_watcher.is_active = False
+            console.print("\n[dim]Teaching session cancelled.[/dim]")
+            break
+
+
+@app.command(name="recover", help="Inspect Event Log and recover interrupted tasks.")
+def recover_command() -> None:
+    """Crash recovery and state replay audit."""
+    from mitchell.core.recovery import recovery_engine
+
+    console.print("[bold cyan]Running Mitchell Recovery & State Audit...[/bold cyan]")
+    report = recovery_engine.audit_and_recover()
+    console.print(f"Status: [bold green]{report['status']}[/bold green]")
+    console.print(f"Recent Events Scanned: {report['total_recent_events_scanned']}")
+    console.print(f"Latest Checkpoint: {report['latest_checkpoint']}")
+    if report.get("uncompleted_tasks"):
+        console.print(f"[yellow]Uncompleted tasks from previous session: {report['uncompleted_tasks']}[/yellow]")
+    else:
+        console.print("[green]No interrupted tasks found. System clean![/green]")
+
+
+@app.command(name="health", help="Run comprehensive health check across all pillars.")
+def health_command() -> None:
+    """Run health check."""
+    from mitchell.core.watchdog import watchdog
+
+    report = watchdog.run_health_check()
+    table = Table(show_header=True, header_style="bold green")
+    table.add_column("Component", style="cyan")
+    table.add_column("Status / Details", style="white")
+    table.add_row("Overall Health", f"[bold green]{report['status'].upper()}[/bold green]")
+    table.add_row("Database Connected", "✓ Yes" if report["database_connected"] else "✗ No")
+    table.add_row("Registered Hive Agents", ", ".join(report["agents"]))
+    table.add_row("Active Resource Locks", str(len(report["active_locks"])))
+    console.print(table)
+
+
+@app.command(name="cost", help="Display token usage and costs in INR (₹).")
+def cost_command() -> None:
+    """Display cost summary."""
+    from mitchell.core.cost import cost_tracker
+
+    summary = cost_tracker.get_summary()
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="white")
+    for k, v in summary.items():
+        table.add_row(k, str(v))
+    console.print(table)
 
 
 def do(goal: Optional[str] = None) -> None:
