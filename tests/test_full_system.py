@@ -180,4 +180,33 @@ def test_vision_grounding() -> None:
     assert vis_res.get("status") == "success"
 
 
+def test_blackboard_and_teams() -> None:
+    """Verify Shared Blackboard, Team Coordinator, and TaskGraphScheduler."""
+    from mitchell.hive.blackboard import blackboard
+    from mitchell.hive.teams import team_coordinator
+    from mitchell.hive.tasks import task_scheduler
+    from mitchell.manager.planner import TaskGraph, TaskNode
+
+    # 1. Blackboard
+    entry = blackboard.post("test_topic", {"key": "value"}, author="tester")
+    assert entry.topic == "test_topic"
+    entries = blackboard.read_topic("test_topic")
+    assert len(entries) >= 1
+
+    # 2. Team Coordinator
+    assert len(team_coordinator.list_teams()) >= 3
+    res = team_coordinator.dispatch_team("optimization_team", "audit")
+    assert res.get("status") == "success"
+
+    # 3. TaskGraph Scheduler
+    node1 = TaskNode(title="Step 1", target_agent="echo_agent", action="Hello 1")
+    node2 = TaskNode(title="Step 2", target_agent="echo_agent", action="Hello 2", dependencies=[node1.id])
+    graph = TaskGraph(goal="Test multi-node DAG", nodes=[node1, node2])
+
+    exec_res = asyncio.run(task_scheduler.execute_graph(graph))
+    assert exec_res.success is True
+    assert exec_res.nodes_completed == 2
+
+
+
 
