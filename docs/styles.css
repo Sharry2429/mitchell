@@ -1,21 +1,29 @@
-/* Mitchell Universal Modern Design System & Documentation Styles */
+/* Mitchell Universal Natural Modern Design System */
 
 :root {
-  --bg-color: #08090b;
-  --panel-color: #0f1015;
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --text-primary: #ffffff;
-  --text-secondary: #8890a8;
-  --text-muted: #555b6e;
+  --bg-color: #090a0f;
+  --panel-color: #10121a;
+  --panel-hover: #151824;
+  --panel-border: rgba(255, 255, 255, 0.07);
+  --text-primary: #f0f2f8;
+  --text-secondary: #8e95ab;
+  --text-muted: #585e73;
   --accent-lavender: #a8a0e5;
   --accent-blue: #70a8e8;
   --accent-mint: #7dcfa3;
   --accent-coral: #e88a7d;
   --accent-amber: #e8c070;
-  --code-bg: #060709;
+  --code-bg: #07080c;
+  --code-border: rgba(255, 255, 255, 0.08);
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  --transition-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
 }
 
 /* Custom Scrollbar */
@@ -27,47 +35,50 @@
   background: var(--bg-color);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* Glassmorphism Classes */
+/* Natural Glassmorphism & Panels */
 .glass-panel {
-  background: rgba(15, 16, 21, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--panel-color);
   border: 1px solid var(--panel-border);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--panel-color);
+  border: 1px solid var(--panel-border);
   transition: var(--transition-smooth);
 }
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(168, 160, 229, 0.3);
+  background: var(--panel-hover);
+  border-color: rgba(168, 160, 229, 0.25);
   transform: translateY(-2px);
 }
 
-/* Tab Navigation */
+/* Navigation Tabs */
 .tab-btn {
   transition: var(--transition-smooth);
+  color: var(--text-secondary);
+}
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 .tab-btn.active {
   background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  color: var(--text-primary);
   border-color: var(--accent-lavender);
 }
 
-/* Terminal & Code Block */
+/* Code Snippets & Copy */
 .code-wrapper {
   background: var(--code-bg);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+  border: 1px solid var(--code-border);
+  border-radius: 12px;
   position: relative;
   font-family: var(--font-mono);
 }
@@ -78,25 +89,34 @@
   right: 10px;
   padding: 4px 10px;
   font-size: 11px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   color: var(--text-secondary);
   cursor: pointer;
   transition: var(--transition-smooth);
 }
 .copy-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
 }
 
-/* Glow Effects */
-.glow-accent {
-  box-shadow: 0 0 35px rgba(168, 160, 229, 0.25);
-}
-
+/* Gradients and Highlights */
 .gradient-text {
-  background: linear-gradient(135deg, var(--accent-lavender), var(--accent-blue) 50%, var(--accent-mint));
+  background: linear-gradient(135deg, var(--accent-lavender), var(--accent-blue) 40%, var(--accent-mint));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Filter search input */
+.search-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--panel-border);
+  color: var(--text-primary);
+  transition: var(--transition-smooth);
+}
+.search-input:focus {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--accent-lavender);
+  outline: none;
 }
