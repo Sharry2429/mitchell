@@ -208,5 +208,43 @@ def test_blackboard_and_teams() -> None:
     assert exec_res.nodes_completed == 2
 
 
+def test_voice_subsystem() -> None:
+    """Verify cross-platform voice STT, TTS, and VoiceMode modules import and initialize."""
+    import sys
+    from mitchell.voice.stt import SpeechToText, stt_engine
+    from mitchell.voice.tts import TextToSpeech, tts_engine
+    from mitchell.voice.voice_mode import VoiceMode, voice_mode
+
+    # STT should always instantiate
+    assert isinstance(stt_engine, SpeechToText)
+
+    # TTS should pick a backend (even if console fallback)
+    assert isinstance(tts_engine, TextToSpeech)
+    assert tts_engine._backend in ("pyttsx3", "macos_say", "espeak", "console", "none")
+
+    # VoiceMode should be constructable
+    assert isinstance(voice_mode, VoiceMode)
+    assert voice_mode.is_active is False
+
+
+def test_cross_platform_guards() -> None:
+    """Verify Windows-only modules gracefully handle non-Windows platforms."""
+    import sys
+
+    # Windows mouse should always import without error
+    from mitchell.windows.mouse import DesktopMouse, desktop_mouse
+    assert isinstance(desktop_mouse, DesktopMouse)
+
+    # Windows engine should import without error
+    from mitchell.windows.engine import WindowsEngine, windows_engine
+    assert isinstance(windows_engine, WindowsEngine)
+
+    # On non-Windows, pywinauto won't be available but should not crash
+    if sys.platform != "win32":
+        from mitchell.windows.engine import PYWINAUTO_AVAILABLE
+        assert PYWINAUTO_AVAILABLE is False
+
+
+
 
 

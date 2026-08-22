@@ -1,0 +1,20 @@
+/* Glassmorphism and Custom Styles for Mitchell Simulator */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #08090b;
+}
+
+.bg-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #a8a0e5 0%, #70a8e8 50%, #7dcfa3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

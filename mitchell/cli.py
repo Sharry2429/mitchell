@@ -259,6 +259,56 @@ def research_command(
         console.print(f"  • {s.url} ({'✓ Verified' if s.success else '✗ Failed'})")
 
 
+@app.command(name="voice", help="Start interactive voice conversation mode (wake word: 'hey mitchell').")
+def voice_command() -> None:
+    """Launch voice interaction loop."""
+    from mitchell.voice import voice_mode
+
+    console.print("[bold green]Starting Mitchell Voice Mode...[/bold green]")
+    console.print("[dim]Say 'hey Mitchell' to wake up. Say 'stop' to go back to sleep. Ctrl+C to exit.[/dim]")
+    try:
+        voice_mode.run_loop()
+    except KeyboardInterrupt:
+        console.print("\n[dim]Voice mode stopped.[/dim]")
+
+
+@app.command(name="launch", help="Launch all Mitchell services (Orb + REST API + Voice).")
+def launch_command(
+    api_port: int = typer.Option(8000, help="REST API port"),
+    orb: bool = typer.Option(True, help="Start WebSocket Orb bridge"),
+) -> None:
+    """Unified launcher starting all Mitchell services."""
+    import threading
+    from mitchell.api.server import MitchellAPIServer
+
+    console.print("[bold green]🚀 Mitchell Unified Launcher[/bold green]")
+    console.print(f"  • REST API: http://127.0.0.1:{api_port}")
+
+    threads = []
+
+    # REST API thread
+    api_server = MitchellAPIServer(host="127.0.0.1", port=api_port)
+    t_api = threading.Thread(target=api_server.start, daemon=True, name="api-server")
+    t_api.start()
+    threads.append(t_api)
+    console.print("  [green]✓[/green] REST API Server started")
+
+    # Orb WebSocket bridge
+    if orb:
+        from mitchell.orb.bridge import orb_bridge
+        t_orb = threading.Thread(target=lambda: asyncio.run(orb_bridge.start()), daemon=True, name="orb-bridge")
+        t_orb.start()
+        threads.append(t_orb)
+        console.print("  [green]✓[/green] Orb WebSocket Bridge started")
+
+    console.print("\n[bold cyan]All services running. Press Ctrl+C to stop.[/bold cyan]")
+    try:
+        while True:
+            import time
+            time.sleep(1)
+    except KeyboardInterrupt:
+        console.print("\n[dim]Shutting down services...[/dim]")
+
 
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""

@@ -4,17 +4,18 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mitchell"
-version = "0.1.0"
+version = "0.2.0"
 description = "Mitchell - Autonomous Multi-Agent Hive & Task Orchestration Framework"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "Mitchell Team" }
 ]
-keywords = ["agent", "orchestration", "hive", "llm", "automation", "browser", "playwright", "windows", "android"]
+keywords = ["agent", "orchestration", "hive", "llm", "automation", "browser", "playwright", "windows", "android", "cross-platform"]
 
 dependencies = [
+    # Core
     "pydantic>=2.6.0",
     "pydantic-settings>=2.2.0",
     "rich>=13.7.0",
@@ -24,10 +25,23 @@ dependencies = [
     "loguru>=0.7.2",
     "aiofiles>=23.2.1",
     "orjson>=3.9.15",
-    "playwright>=1.42.0",
     "websockets>=12.0",
-    "pywinauto>=0.6.8; platform_system=='Windows'",
     "Pillow>=10.0.0",
+    "requests>=2.32.0",
+
+    # Browser Pillar (cross-platform)
+    "playwright>=1.42.0",
+
+    # Windows Pillar (Windows only)
+    "pywinauto>=0.6.8; sys_platform == 'win32'",
+    "pywin32>=310; sys_platform == 'win32'",
+    "comtypes>=1.4.0; sys_platform == 'win32'",
+
+    # Voice (cross-platform)
+    "pyttsx3>=2.90",
+    "sounddevice>=0.4.6",
+    "soundfile>=0.12.1",
+    "numpy>=1.24.0",
 ]
 
 [project.optional-dependencies]
@@ -45,3 +59,7 @@ mitchell-mcp = "mitchell.mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["mitchell"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
