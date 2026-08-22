@@ -451,6 +451,46 @@ def test_benchmark_arena_runner() -> None:
     assert "bench_test_echo" in report
 
 
+def test_security_guardrails_and_audit() -> None:
+    """Verify permission tier evaluation, dangerous action checking, and cryptographic log hashing."""
+    from mitchell.security import SecurityGuardrail, PermissionLevel
+    from mitchell.tools.registry import Tool
+
+    guard = SecurityGuardrail()
+
+    safe_tool = Tool(name="read_file", description="Safe read", parameters={}, function=lambda: "ok")
+    dangerous_tool = Tool(name="windows_click", description="Dangerous click", parameters={}, function=lambda: "ok", is_dangerous=True)
+
+    # 1. Classification
+    assert guard.classify_tool_risk(safe_tool) == PermissionLevel.READ_ONLY
+    assert guard.classify_tool_risk(dangerous_tool) == PermissionLevel.CONFIRM_REQUIRED
+
+    # 2. Action Verification
+    allowed, _ = guard.verify_action_allowed(safe_tool)
+    assert allowed is True
+
+    # 3. Hash Chaining
+    hash_val = guard.calculate_log_chain_hash(events=[
+        {"id": "ev1", "timestamp": "2026-08-22T00:00:00Z", "type": "task_start", "source": "manager"},
+        {"id": "ev2", "timestamp": "2026-08-22T00:00:01Z", "type": "task_end", "source": "manager"},
+    ])
+    assert len(hash_val) == 64  # SHA256 hex string length
+
+
+def test_vps_deployer() -> None:
+    """Verify systemd service unit and Caddy reverse proxy file generation."""
+    from mitchell.deploy import vps_deployer
+
+    unit = vps_deployer.generate_systemd_unit(service_type="butler")
+    assert "[Unit]" in unit
+    assert "ExecStart=/opt/mitchell/venv/bin/mitchell butler" in unit
+
+    caddyfile = vps_deployer.generate_caddyfile(domain="agent.mitchell.local", studio_port=8500)
+    assert "agent.mitchell.local {" in caddyfile
+    assert "reverse_proxy 127.0.0.1:8500" in caddyfile
+
+
+
 
 
 

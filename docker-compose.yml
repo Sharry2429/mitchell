@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  mitchell:
+    build: .
+    container_name: mitchell-hive
+    restart: unless-stopped
+    ports:
+      - "8000:8000"   # REST API
+      - "8500:8500"   # Workflow Studio Web UI
+      - "8765:8765"   # WebSocket Orb Bridge
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MITCHELL_BUDGET_CAP=10.0
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    volumes:
+      - mitchell_data:/app/data
+      - mitchell_config:/app/.mitchell
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  mitchell_data:
+  mitchell_config:

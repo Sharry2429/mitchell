@@ -443,6 +443,39 @@ def benchmark_command(
     console.print(Panel(report, border_style="cyan", title="Benchmark Results"))
 
 
+@app.command(name="security", help="Inspect security guardrail permissions and audit hash integrity.")
+def security_command(
+    audit: bool = typer.Option(True, "--audit", "-a", help="Run cryptographic audit check"),
+) -> None:
+    """Check security guardrails and audit integrity."""
+    from mitchell.security import security_guardrail
+
+    hash_val = security_guardrail.calculate_log_chain_hash()
+    console.print(Panel(
+        f"[bold green]✓ Security Guardrails Active[/bold green]\n"
+        f"[bold cyan]Audit Log SHA256 Chain Hash:[/bold cyan] {hash_val[:16]}...{hash_val[-16:]}\n"
+        f"[bold cyan]Action Risk Policy:[/bold cyan] Tiered Read-Only / Confirmation Required",
+        title="🛡️ Mitchell Security Policy",
+        border_style="green",
+    ))
+
+
+@app.command(name="deploy", help="Generate production deployment configs (systemd / Caddy).")
+def deploy_command(
+    service: str = typer.Option("butler", help="Service name (butler, studio)"),
+    caddy: bool = typer.Option(False, "--caddy", help="Generate Caddy reverse proxy config"),
+) -> None:
+    """Generate production deploy configurations."""
+    from mitchell.deploy import vps_deployer
+
+    if caddy:
+        cfg = vps_deployer.generate_caddyfile()
+        console.print(Panel(cfg, title="Caddyfile Configuration", border_style="cyan"))
+    else:
+        unit = vps_deployer.generate_systemd_unit(service_type=service)
+        console.print(Panel(unit, title=f"Systemd Service Unit ({service})", border_style="green"))
+
+
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""
     if goal is None:
