@@ -476,6 +476,19 @@ def deploy_command(
         console.print(Panel(unit, title=f"Systemd Service Unit ({service})", border_style="green"))
 
 
+@app.command(name="avatar", help="Launch interactive 3D Orb Avatar & live audio studio.")
+def avatar_command(
+    port: int = typer.Option(8550, help="Avatar server port"),
+) -> None:
+    """Launch 3D Orb Avatar UI."""
+    import webbrowser
+    from mitchell.studio.server import MitchellStudioServer
+
+    console.print(f"[bold green]🔮 Mitchell 3D Orb Avatar Live on http://127.0.0.1:{port}...[/bold green]")
+    server = MitchellStudioServer(host="127.0.0.1", port=port)
+    server.start()
+
+
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""
     if goal is None:

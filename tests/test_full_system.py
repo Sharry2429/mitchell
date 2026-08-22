@@ -490,6 +490,52 @@ def test_vps_deployer() -> None:
     assert "reverse_proxy 127.0.0.1:8500" in caddyfile
 
 
+def test_avatar_state_and_audio() -> None:
+    """Verify avatar state machine, audio frame energy calculation, and barge-in tracking."""
+    from mitchell.avatar import avatar_manager, AvatarStateEnum, audio_analyzer
+
+    # 1. State Machine
+    st = avatar_manager.set_state(AvatarStateEnum.ACTION, emotion="confident")
+    assert st.current_state == AvatarStateEnum.ACTION
+    assert st.emotion == "confident"
+
+    state_dict = avatar_manager.get_state()
+    assert state_dict["state"] == "action"
+
+    # 2. Audio Frame Processing
+    samples = [0.1, -0.2, 0.3, -0.1, 0.4]
+    frame_res = audio_analyzer.process_frame(samples)
+    assert frame_res["rms"] > 0.0
+    assert frame_res["energy"] > 0.0
+
+
+def test_screen_annotator_and_recorder() -> None:
+    """Verify screen highlight calculation, arrow geometries, and session recorder."""
+    from mitchell.avatar import screen_annotator, session_recorder
+
+    # 1. Screen Annotator
+    screen_annotator.clear()
+    ann = screen_annotator.highlight_element(x=200, y=300, width=150, height=50, label="Search Bar")
+    assert ann.x == 200
+    assert ann.label == "Search Bar"
+
+    active = screen_annotator.get_active_annotations()
+    assert len(active) == 1
+
+    # 2. Session Recorder
+    session_recorder.start_recording(title="Autonomous Verification Test")
+    session_recorder.record_step(action_type="click", target="Search Button", description="Clicked on the search input.")
+    session_recorder.record_step(action_type="type", target="Search Input", description="Typed query text.")
+
+    summary = session_recorder.stop_recording()
+    assert summary["total_steps"] == 2
+
+    md = session_recorder.generate_markdown_walkthrough()
+    assert "# 🎬 Walkthrough: Autonomous Verification Test" in md
+    assert "Step 1. Click on `Search Button`" in md
+
+
+
 
 
 

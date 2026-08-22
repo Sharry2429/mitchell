@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitchell Avatar — Real-Time 3D Interactive Orb</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Outfit"', 'system-ui'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            ink: '#08090b',
+            lavender: '#a8a0e5',
+            mint: '#7dcfa3',
+            coral: '#e88a7d',
+            blue: '#70a8e8',
+            amber: '#e8c070',
+            slate: '#8890a8',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-ink text-white font-display flex flex-col items-center justify-between min-h-screen p-8 overflow-hidden select-none">
+
+<!-- Header -->
+<header class="w-full max-w-4xl flex items-center justify-between z-20">
+  <div class="flex items-center gap-3">
+    <span class="w-3 h-3 rounded-full bg-mint animate-pulse"></span>
+    <span class="font-bold text-lg tracking-tight">Mitchell Live Avatar</span>
+  </div>
+  <div class="flex items-center gap-3 font-mono text-xs text-slate">
+    <span id="agent-state-badge" class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-mint">
+      State: IDLE
+    </span>
+    <a href="/studio" class="hover:text-white px-3 py-1 rounded-full bg-white/5 border border-white/10">Studio</a>
+  </div>
+</header>
+
+<!-- Center 3D Procedural Canvas Orb -->
+<main class="relative flex flex-col items-center justify-center flex-1 my-auto">
+  <div class="relative w-80 h-80 flex items-center justify-center">
+    <div id="orb-glow" class="absolute inset-0 rounded-full blur-3xl opacity-40 bg-gradient-to-tr from-lavender via-blue to-mint transition-all duration-700"></div>
+    <canvas id="orb-canvas" width="320" height="320" class="relative z-10 rounded-full cursor-pointer"></canvas>
+  </div>
+
+  <p id="transcript-box" class="mt-8 text-center text-sm font-mono text-slate/80 max-w-md min-h-[48px] px-4 py-2 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md">
+    "Say 'hey Mitchell' or click the Orb to speak..."
+  </p>
+</main>
+
+<!-- Bottom Controls -->
+<footer class="w-full max-w-md flex flex-col items-center gap-4 z-20">
+  <div class="flex items-center gap-4">
+    <button onclick="toggleVoiceState('listening')" class="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-mono border border-white/10 transition-colors flex items-center gap-2">
+      <i class="fa-solid fa-microphone text-mint"></i> Listen
+    </button>
+    <button onclick="toggleVoiceState('thinking')" class="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-mono border border-white/10 transition-colors flex items-center gap-2">
+      <i class="fa-solid fa-brain text-lavender"></i> Think
+    </button>
+    <button onclick="toggleVoiceState('speaking')" class="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-mono border border-white/10 transition-colors flex items-center gap-2">
+      <i class="fa-solid fa-volume-high text-blue"></i> Speak
+    </button>
+    <button onclick="toggleVoiceState('action')" class="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-mono border border-white/10 transition-colors flex items-center gap-2">
+      <i class="fa-solid fa-bolt text-amber"></i> Action
+    </button>
+  </div>
+</footer>
+
+<script>
+  const canvas = document.getElementById('orb-canvas');
+  const ctx = canvas.getContext('2d');
+  const glow = document.getElementById('orb-glow');
+  const badge = document.getElementById('agent-state-badge');
+  const transcript = document.getElementById('transcript-box');
+
+  let state = 'idle';
+  let t = 0;
+
+  function toggleVoiceState(newState) {
+    state = newState;
+    badge.textContent = `State: ${newState.toUpperCase()}`;
+    
+    if (newState === 'listening') {
+      glow.className = "absolute inset-0 rounded-full blur-3xl opacity-60 bg-gradient-to-tr from-mint via-blue to-cyan transition-all duration-500";
+      transcript.textContent = '"Listening for your voice command..."';
+    } else if (newState === 'thinking') {
+      glow.className = "absolute inset-0 rounded-full blur-3xl opacity-70 bg-gradient-to-tr from-lavender via-coral to-amber transition-all duration-300";
+      transcript.textContent = '"Analyzing intent and synthesizing plan..."';
+    } else if (newState === 'speaking') {
+      glow.className = "absolute inset-0 rounded-full blur-3xl opacity-80 bg-gradient-to-tr from-blue via-lavender to-mint transition-all duration-500";
+      transcript.textContent = '"Mitchell: I have completed the automated research and verified citations."';
+    } else if (newState === 'action') {
+      glow.className = "absolute inset-0 rounded-full blur-3xl opacity-80 bg-gradient-to-tr from-amber via-coral to-lavender transition-all duration-300";
+      transcript.textContent = '"Executing cross-platform tool actions..."';
+    } else {
+      glow.className = "absolute inset-0 rounded-full blur-3xl opacity-40 bg-gradient-to-tr from-lavender via-blue to-mint transition-all duration-700";
+      transcript.textContent = '"Say \'hey Mitchell\' or click the Orb to speak..."';
+    }
+  }
+
+  // Procedural dynamic sphere animation
+  function renderOrb() {
+    t += 0.03;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const cx = 160, cy = 160, r = 100;
+
+    const grad = ctx.createRadialGradient(cx - 30, cy - 30, 10, cx, cy, r);
+    if (state === 'listening') {
+      grad.addColorStop(0, '#7dcfa3');
+      grad.addColorStop(0.5, '#70a8e8');
+      grad.addColorStop(1, '#08090b');
+    } else if (state === 'thinking') {
+      grad.addColorStop(0, '#e88a7d');
+      grad.addColorStop(0.5, '#a8a0e5');
+      grad.addColorStop(1, '#08090b');
+    } else if (state === 'action') {
+      grad.addColorStop(0, '#e8c070');
+      grad.addColorStop(0.5, '#e88a7d');
+      grad.addColorStop(1, '#08090b');
+    } else {
+      grad.addColorStop(0, '#a8a0e5');
+      grad.addColorStop(0.5, '#70a8e8');
+      grad.addColorStop(1, '#08090b');
+    }
+
+    ctx.beginPath();
+    for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+      const wave = Math.sin(angle * 4 + t) * 6 + Math.cos(angle * 3 - t) * 4;
+      const currentR = r + wave;
+      const x = cx + Math.cos(angle) * currentR;
+      const y = cy + Math.sin(angle) * currentR;
+      if (angle === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    requestAnimationFrame(renderOrb);
+  }
+  renderOrb();
+</script>
+</body>
+</html>
