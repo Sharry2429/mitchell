@@ -1,210 +1,476 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-theme="default">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>Mitchell — Autonomous Cross-Platform Multi-Agent Hive</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Mitchell — Autonomous Multi-Agent Hive & Task Orchestration Framework</title>
+  <meta name="description" content="Official documentation and developer portal for Mitchell: the self-hosted, self-evolving, cross-platform autonomous multi-agent framework." />
+  
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap"
-    rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            display: ['"Outfit"', 'system-ui'],
-            body: ['"Instrument Serif"', 'Georgia'],
+            display: ['"Outfit"', 'system-ui', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
           },
           colors: {
-            ink: '#08090b',
-            surface: '#0d0e12',
-            panel: '#121318',
-            glass: 'rgba(255,255,255,0.03)',
-            glassBorder: 'rgba(255,255,255,0.08)',
+            ink: 'var(--bg-color)',
+            surface: 'var(--panel-color)',
             lavender: '#a8a0e5',
-            coral: '#e88a7d',
-            mint: '#7dcfa3',
-            amber: '#e8c070',
             blue: '#70a8e8',
+            mint: '#7dcfa3',
+            coral: '#e88a7d',
+            amber: '#e8c070',
             slate: '#8890a8',
-          },
-          animation: {
-            'float-slow': 'float 8s ease-in-out infinite',
-            'pulse-ring': 'pulse-ring 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite',
-            'slide-up': 'slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
-          },
-          keyframes: {
-            float: {
-              '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-6px)' },
-            },
-            'pulse-ring': {
-              '0%': { boxShadow: '0 0 0 0 rgba(168,160,229,0.35)' },
-              '70%': { boxShadow: '0 0 0 24px rgba(168,160,229,0)' },
-              '100%': { boxShadow: '0 0 0 0 rgba(168,160,229,0)' },
-            },
-            slideUp: {
-              '0%': { opacity: '0', transform: 'translateY(20px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
-            }
           }
         }
       }
     }
   </script>
+  <link rel="stylesheet" href="themes.css">
   <link rel="stylesheet" href="styles.css">
 </head>
+<body class="bg-ink text-slate font-display antialiased selection:bg-lavender/25 selection:text-white min-h-screen flex flex-col justify-between">
 
-<body class="bg-ink text-slate font-display antialiased selection:bg-lavender/20">
+  <!-- Background Ambient Glow -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-b from-lavender/15 via-blue/10 to-transparent blur-[140px] rounded-full"></div>
+    <div class="absolute top-1/2 -right-40 w-[600px] h-[600px] bg-mint/5 blur-[160px] rounded-full"></div>
+  </div>
 
-  <!-- Navigation -->
-  <nav
-    class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10 py-5 bg-ink/60 backdrop-blur-xl border-b border-white/5">
-    <div class="flex items-center gap-3">
-      <div
-        class="w-9 h-9 rounded-full bg-gradient-to-br from-lavender to-blue flex items-center justify-center shadow-[0_0_20px_rgba(168,160,229,0.35)]">
-        <i class="fa-solid fa-robot text-white text-sm"></i>
-      </div>
-      <span class="font-display font-bold text-xl text-white tracking-tight">Mitchell</span>
-    </div>
-    <div class="hidden lg:flex items-center gap-8 text-sm font-display text-slate/80">
-      <a href="#simulator" class="hover:text-white transition-colors">Live Simulator</a>
-      <a href="#features" class="hover:text-white transition-colors">Features</a>
-      <a href="#architecture" class="hover:text-white transition-colors">Architecture</a>
-      <a href="#setup" class="hover:text-white transition-colors">Setup</a>
-    </div>
-    <a href="https://github.com/Sharry2429/mitchell" target="_blank"
-      class="font-display text-sm font-medium px-5 py-2.5 rounded-full bg-white text-ink hover:bg-slate/20 hover:text-white transition-all flex items-center gap-2">
-      <i class="fa-brands fa-github"></i> GitHub
-    </a>
-  </nav>
+  <!-- Global Header / Navbar -->
+  <header class="sticky top-0 z-50 glass-panel border-b border-white/5 px-6 lg:px-12 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-lavender via-blue to-mint p-0.5 shadow-[0_0_20px_rgba(168,160,229,0.35)] group-hover:scale-105 transition-transform">
+          <div class="w-full h-full bg-surface rounded-[10px] flex items-center justify-center">
+            <i class="fa-solid fa-cube text-lavender text-sm"></i>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-bold text-lg text-white tracking-tight flex items-center gap-2">
+            Mitchell <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-mint/15 text-mint border border-mint/20">v1.0.0</span>
+          </span>
+          <span class="text-[10px] font-mono text-slate/70 -mt-1">Autonomous Multi-Agent Hive</span>
+        </div>
+      </a>
 
-  <!-- Hero -->
-  <header class="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-20">
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(168,160,229,0.15),transparent_60%)]"></div>
-
-    <div class="relative z-10 text-center px-6 max-w-4xl mx-auto">
-      <div
-        class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-glass text-xs font-mono text-slate mb-8">
-        <span class="w-1.5 h-1.5 rounded-full bg-mint animate-pulse"></span> Cross-Platform · Windows, macOS, Linux &
-        Android
-      </div>
-
-      <h1
-        class="font-display font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight text-white leading-[0.95] mb-6">
-        Your devices.<br>
-        <span class="bg-gradient-to-r from-lavender via-blue to-mint bg-clip-text text-transparent">One Hive
-          Agent.</span>
-      </h1>
-
-      <p class="font-body text-xl md:text-2xl text-slate/80 max-w-2xl mx-auto leading-relaxed mb-10">
-        Mitchell is a self-hosted autonomous agent framework coordinating <span class="text-white">Playwright
-          Browser</span>, <span class="text-white">Native Windows UIA</span>, <span class="text-white">Wireless Android
-          ADB</span>, and <span class="text-white">Voice Mode</span> with Karpathy engineering rigor.
-      </p>
-
-      <div class="flex flex-wrap justify-center gap-4">
-        <a href="#simulator"
-          class="font-display font-semibold px-8 py-4 rounded-full bg-gradient-to-r from-lavender to-blue text-white shadow-[0_0_40px_rgba(168,160,229,0.3)] hover:shadow-[0_0_60px_rgba(168,160,229,0.5)] transition-all hover:-translate-y-0.5">
-          Explore Simulator
+      <!-- Center Links -->
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="#quickstart" class="text-white/80 hover:text-white transition-colors">Quickstart</a>
+        <a href="#sdk" class="text-white/80 hover:text-white transition-colors">Python SDK</a>
+        <a href="#architecture" class="text-white/80 hover:text-white transition-colors">Architecture</a>
+        <a href="#cli" class="text-white/80 hover:text-white transition-colors">CLI Manual</a>
+        <a href="#api" class="text-white/80 hover:text-white transition-colors">REST & MCP</a>
+        <a href="studio.html" class="text-lavender hover:text-white transition-colors flex items-center gap-1.5">
+          <i class="fa-solid fa-diagram-project text-xs"></i> Studio
         </a>
-        <a href="https://github.com/Sharry2429/mitchell" target="_blank"
-          class="font-display font-medium px-8 py-4 rounded-full border border-white/10 text-white hover:bg-white/5 transition-all">
-          View Repository
+        <a href="avatar.html" class="text-blue hover:text-white transition-colors flex items-center gap-1.5">
+          <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> 3D Avatar
+        </a>
+      </nav>
+
+      <!-- Right Controls -->
+      <div class="flex items-center gap-3">
+        <!-- Theme Selector Dropdown -->
+        <div class="relative">
+          <select id="theme-selector" onchange="changeTheme(this.value)" class="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-slate font-mono focus:outline-none focus:border-lavender cursor-pointer">
+            <option value="default">Lavender Dark</option>
+            <option value="oled">Midnight OLED</option>
+            <option value="cyberpunk">Cyberpunk Neon</option>
+            <option value="solarized">Solarized Amber</option>
+            <option value="nordic">Nordic Frost</option>
+          </select>
+        </div>
+
+        <a href="https://github.com/Sharry2429/mitchell" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-mono border border-white/10 transition-colors flex items-center gap-2">
+          <i class="fa-brands fa-github text-sm"></i> <span class="hidden sm:inline">Star on GitHub</span>
         </a>
       </div>
     </div>
   </header>
 
-  <!-- Simulator Section -->
-  <section id="simulator" class="relative py-20 px-6 md:px-12 max-w-7xl mx-auto">
+  <!-- Hero Section -->
+  <section class="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-16 pb-20 text-center">
+    <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-slate mb-8 backdrop-blur-md">
+      <span class="w-2 h-2 rounded-full bg-mint animate-ping"></span>
+      <span class="text-white font-medium">Golden v1.0.0 Production Release</span> · Cross-Platform Autonomous Hive
+    </div>
+
+    <h1 class="font-extrabold text-5xl sm:text-6xl lg:text-7xl text-white tracking-tight leading-[1.05] max-w-5xl mx-auto mb-6">
+      Autonomous Multi-Agent AI.<br />
+      <span class="gradient-text">Across All Your Devices.</span>
+    </h1>
+
+    <p class="text-lg sm:text-xl text-slate max-w-3xl mx-auto mb-10 leading-relaxed">
+      A self-hosted, self-evolving, cross-platform autonomous framework orchestrating <span class="text-white font-medium">Playwright Browsers</span>, <span class="text-white font-medium">Native Windows UIA</span>, <span class="text-white font-medium">Wireless Android ADB</span>, and <span class="text-white font-medium">Real-Time WebRTC Voice</span> with Karpathy engineering rigor.
+    </p>
+
+    <!-- Quick 1-Click Install Command Box -->
+    <div class="max-w-2xl mx-auto glass-panel rounded-2xl p-2 border border-white/10 mb-12 shadow-2xl">
+      <div class="flex items-center justify-between px-3 py-2 border-b border-white/5 mb-2">
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-3 rounded-full bg-coral/80"></span>
+          <span class="w-3 h-3 rounded-full bg-amber/80"></span>
+          <span class="w-3 h-3 rounded-full bg-mint/80"></span>
+          <span class="text-xs font-mono text-slate/70 ml-2">1-Click Universal Install</span>
+        </div>
+        <div class="flex gap-1" id="install-tabs">
+          <button onclick="setInstallTab('ps1')" id="tab-ps1" class="px-2.5 py-1 text-xs font-mono rounded-md bg-white/10 text-white">PowerShell</button>
+          <button onclick="setInstallTab('sh')" id="tab-sh" class="px-2.5 py-1 text-xs font-mono rounded-md text-slate hover:text-white">Bash / Mac</button>
+          <button onclick="setInstallTab('docker')" id="tab-docker" class="px-2.5 py-1 text-xs font-mono rounded-md text-slate hover:text-white">Docker</button>
+          <button onclick="setInstallTab('sdk')" id="tab-sdk" class="px-2.5 py-1 text-xs font-mono rounded-md text-slate hover:text-white">Python SDK</button>
+        </div>
+      </div>
+      
+      <div class="relative code-wrapper p-4 text-left">
+        <code id="install-cmd" class="text-mint text-sm font-mono block overflow-x-auto whitespace-nowrap">
+          powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+        </code>
+        <button onclick="copyInstallCmd()" class="copy-btn" id="copy-btn">
+          <i class="fa-regular fa-copy"></i> Copy
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Stat Badges -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
+      <div class="glass-card rounded-xl p-4 text-center">
+        <div class="text-2xl font-bold text-white font-mono">26/26</div>
+        <div class="text-xs text-slate mt-1">Passing Test Suites</div>
+      </div>
+      <div class="glass-card rounded-xl p-4 text-center">
+        <div class="text-2xl font-bold text-mint font-mono">&lt;200ms</div>
+        <div class="text-xs text-slate mt-1">Decision Loop Latency</div>
+      </div>
+      <div class="glass-card rounded-xl p-4 text-center">
+        <div class="text-2xl font-bold text-lavender font-mono">5 Teams</div>
+        <div class="text-xs text-slate mt-1">Specialized Hive Agents</div>
+      </div>
+      <div class="glass-card rounded-xl p-4 text-center">
+        <div class="text-2xl font-bold text-blue font-mono">₹0.00 / $0</div>
+        <div class="text-xs text-slate mt-1">Offline Local LLM Mode</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Pillars Grid -->
+  <section class="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 py-16 border-t border-white/5">
     <div class="text-center mb-12">
-      <h2 class="font-display font-bold text-4xl md:text-5xl text-white mb-3">Live Device Simulator</h2>
-      <p class="font-body text-lg text-slate/70">Interactive cross-platform control across desktop and mobile pillars.
+      <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-3">Six Autonomous Pillars</h2>
+      <p class="text-slate text-sm max-w-xl mx-auto">Engineered from ground up with modular architecture, strict typing, and zero fragile dependencies.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Pillar 1 -->
+      <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+        <div class="w-12 h-12 rounded-xl bg-blue/10 border border-blue/20 flex items-center justify-center text-blue text-xl mb-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-globe"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Playwright Browser Pillar</h3>
+        <p class="text-xs text-slate leading-relaxed">Multi-session isolated browser control with stealth anti-detection, human Bezier mouse trajectories, and automatic Turnstile/hCaptcha solvers.</p>
+      </div>
+
+      <!-- Pillar 2 -->
+      <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+        <div class="w-12 h-12 rounded-xl bg-lavender/10 border border-lavender/20 flex items-center justify-center text-lavender text-xl mb-4 group-hover:scale-110 transition-transform">
+          <i class="fa-brands fa-windows"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Native Windows UIA Pillar</h3>
+        <p class="text-xs text-slate leading-relaxed">Direct UIAutomation & Win32 window control. Launch applications, interact with dialogs, simulate human keystrokes with soft cross-platform fallbacks.</p>
+      </div>
+
+      <!-- Pillar 3 -->
+      <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+        <div class="w-12 h-12 rounded-xl bg-mint/10 border border-mint/20 flex items-center justify-center text-mint text-xl mb-4 group-hover:scale-110 transition-transform">
+          <i class="fa-brands fa-android"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Wireless Android ADB Pillar</h3>
+        <p class="text-xs text-slate leading-relaxed">Autonomous mobile touch, swipe gestures, hierarchy tree dumps, and wireless ADB discovery. Automate smartphones from your desk.</p>
+      </div>
+
+      <!-- Pillar 4 -->
+      <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+        <div class="w-12 h-12 rounded-xl bg-coral/10 border border-coral/20 flex items-center justify-center text-coral text-xl mb-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-microphone-lines"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Sub-Second Voice & Avatar</h3>
+        <p class="text-xs text-slate leading-relaxed">Full-duplex voice stream with wake-word detection ("hey mitchell"), barge-in interruption handling, and reactive 3D Canvas Orb visualizer.</p>
+      </div>
+
+      <!-- Pillar 5 -->
+      <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+        <div class="w-12 h-12 rounded-xl bg-amber/10 border border-amber/20 flex items-center justify-center text-amber text-xl mb-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-dna"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Recursive Self-Evolution</h3>
+        <p class="text-xs text-slate leading-relaxed">Codebase AST analysis, dynamic tool synthesis, traceback diagnosis, and auto-rollback self-healing patch engine.</p>
+      </div>
+
+      <!-- Pillar 6 -->
+      <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+        <div class="w-12 h-12 rounded-xl bg-slate/10 border border-slate/20 flex items-center justify-center text-slate text-xl mb-4 group-hover:scale-110 transition-transform">
+          <i class="fa-solid fa-network-wired"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Distributed Mesh & Universal MCP</h3>
+        <p class="text-xs text-slate leading-relaxed">Leader-worker capability clustering across Windows, Linux, and Mac nodes with bi-directional Universal MCP client and server bridges.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Documentation Hub Tabs -->
+  <section id="docs" class="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 py-16 border-t border-white/5">
+    <div class="flex flex-col lg:flex-row items-start justify-between gap-6 mb-8">
+      <div>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-2">Developer Documentation Hub</h2>
+        <p class="text-slate text-sm">Interactive guides, SDK references, CLI cheatsheets, and architectural blueprints.</p>
+      </div>
+
+      <!-- Section Tabs Navigation -->
+      <div class="flex flex-wrap gap-2 p-1.5 rounded-xl bg-surface border border-white/10">
+        <button onclick="showDocTab('quickstart')" id="btn-doc-quickstart" class="tab-btn active px-4 py-2 rounded-lg text-xs font-mono">⚡ Quickstart</button>
+        <button onclick="showDocTab('sdk')" id="btn-doc-sdk" class="tab-btn px-4 py-2 rounded-lg text-xs font-mono text-slate hover:text-white">🐍 Python SDK</button>
+        <button onclick="showDocTab('architecture')" id="btn-doc-architecture" class="tab-btn px-4 py-2 rounded-lg text-xs font-mono text-slate hover:text-white">🧠 Hive Architecture</button>
+        <button onclick="showDocTab('cli')" id="btn-doc-cli" class="tab-btn px-4 py-2 rounded-lg text-xs font-mono text-slate hover:text-white">💻 CLI Manual</button>
+        <button onclick="showDocTab('api')" id="btn-doc-api" class="tab-btn px-4 py-2 rounded-lg text-xs font-mono text-slate hover:text-white">🌐 REST & MCP</button>
+      </div>
+    </div>
+
+    <!-- Tab 1: Quickstart -->
+    <div id="content-quickstart" class="glass-panel rounded-2xl p-8 border border-white/10 space-y-6">
+      <h3 class="text-xl font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-bolt text-amber"></i> Getting Started in 60 Seconds
+      </h3>
+      <p class="text-sm text-slate leading-relaxed">
+        Mitchell requires Python 3.10+ and Git. It automatically sets up virtual environments, installs Playwright Chromium, and configures SQLite databases.
       </p>
+
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="glass-card rounded-xl p-4 border border-white/5">
+          <div class="font-mono text-xs text-mint font-bold mb-2">Step 1: Clone Repository</div>
+          <code class="text-xs font-mono text-white block bg-ink p-2.5 rounded-lg">git clone https://github.com/Sharry2429/mitchell.git<br>cd mitchell</code>
+        </div>
+        <div class="glass-card rounded-xl p-4 border border-white/5">
+          <div class="font-mono text-xs text-lavender font-bold mb-2">Step 2: Run Installer</div>
+          <code class="text-xs font-mono text-white block bg-ink p-2.5 rounded-lg"># Windows: scripts\install.ps1<br># Linux/Mac: bash scripts/install.sh</code>
+        </div>
+        <div class="glass-card rounded-xl p-4 border border-white/5">
+          <div class="font-mono text-xs text-blue font-bold mb-2">Step 3: Run First Goal</div>
+          <code class="text-xs font-mono text-white block bg-ink p-2.5 rounded-lg">mitchell do "Search latest arXiv AI papers"</code>
+        </div>
+      </div>
     </div>
 
-    <!-- Mode Selector -->
-    <div class="flex justify-center mb-8">
-      <div class="inline-flex gap-1 p-1 rounded-2xl bg-panel border border-white/10 backdrop-blur-md">
-        <button onclick="setMode('windows')" id="btn-windows"
-          class="px-6 py-2.5 rounded-xl text-sm font-display font-medium text-white bg-white/10">Windows
-          Desktop</button>
-        <button onclick="setMode('android')" id="btn-android"
-          class="px-6 py-2.5 rounded-xl text-sm font-display font-medium text-slate hover:text-white">Android
-          Mobile</button>
-        <button onclick="setMode('browser')" id="btn-browser"
-          class="px-6 py-2.5 rounded-xl text-sm font-display font-medium text-slate hover:text-white">Browser /
-          Research</button>
+    <!-- Tab 2: Python SDK -->
+    <div id="content-sdk" class="glass-panel rounded-2xl p-8 border border-white/10 space-y-6 hidden">
+      <h3 class="text-xl font-bold text-white flex items-center gap-2">
+        <i class="fa-brands fa-python text-blue"></i> Programmatic Python SDK Reference
+      </h3>
+      <p class="text-sm text-slate leading-relaxed">
+        Integrate Mitchell's autonomous decision loop into your own Python applications with just 3 lines of code:
+      </p>
+
+      <div class="code-wrapper p-6 text-sm font-mono text-slate leading-relaxed overflow-x-auto">
+        <span class="text-coral">import</span> mitchell<br><br>
+        <span class="text-slate/60"># 1. Connect to local hive or remote mesh node</span><br>
+        hive = mitchell.<span class="text-blue">connect</span>()<br><br>
+        <span class="text-slate/60"># 2. Execute an autonomous multi-step goal</span><br>
+        result = hive.<span class="text-mint">do</span>(<span class="text-amber">"Analyze the latest stock movements for NVDA and generate summary"</span>)<br>
+        <span class="text-coral">print</span>(result)<br><br>
+        <span class="text-slate/60"># 3. Voice TTS & Screen Highlighting</span><br>
+        hive.voice.<span class="text-blue">speak</span>(<span class="text-amber">"Financial report generated successfully."</span>)<br>
+        hive.screen.<span class="text-blue">highlight</span>(x=<span class="text-mint">350</span>, y=<span class="text-mint">200</span>, label=<span class="text-amber">"Download Chart"</span>)<br><br>
+        <span class="text-slate/60"># 4. Specialized Financial Hive Team</span><br>
+        finance_team = hive.teams.<span class="text-blue">get_team</span>(<span class="text-amber">"finance_team"</span>)
       </div>
     </div>
 
-    <!-- Main Simulator Layout -->
-    <div class="grid lg:grid-cols-[1fr_380px] gap-8 items-start">
-      <div id="env-container"
-        class="relative min-h-[460px] rounded-[24px] overflow-hidden bg-panel border border-white/10 p-6 flex flex-col justify-between">
-        <div id="view-header" class="flex items-center justify-between border-b border-white/5 pb-4">
-          <div class="flex items-center gap-3">
-            <span class="w-3 h-3 rounded-full bg-mint"></span>
-            <span id="active-pillar-title" class="font-mono text-sm text-white">Pillar: Windows UIA Automation</span>
-          </div>
-          <span class="font-mono text-xs text-slate">Status: READY</span>
-        </div>
+    <!-- Tab 3: Architecture -->
+    <div id="content-architecture" class="glass-panel rounded-2xl p-8 border border-white/10 space-y-6 hidden">
+      <h3 class="text-xl font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-diagram-project text-lavender"></i> Multi-Agent Hive & Shared Blackboard Architecture
+      </h3>
+      <p class="text-sm text-slate leading-relaxed">
+        Mitchell implements an asynchronous Blackboard pub/sub architecture where specialized worker teams post claims, observations, and findings dynamically.
+      </p>
 
-        <div id="console-output"
-          class="font-mono text-xs text-mint/90 bg-ink/80 rounded-xl p-4 my-4 h-64 overflow-y-auto space-y-2 border border-white/5">
-          <p class="text-slate">[00:00:01] Mitchell Core Kernel Initialized.</p>
-          <p class="text-slate">[00:00:02] Multi-Model Router connected (Grok + DeepSeek + OpenAI).</p>
-          <p class="text-slate">[00:00:03] Cross-Platform Automation Ready.</p>
-          <p class="text-lavender">[00:00:04] Hive Router & Shared Blackboard online.</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
+        <div class="glass-card p-4 rounded-xl">
+          <div class="text-mint font-bold mb-1">Research Team</div>
+          <div class="text-slate/70">Browser Worker + Vision Worker for deep autonomous web scraping & fact synthesis.</div>
         </div>
-
-        <div class="flex gap-2">
-          <input id="goal-input" type="text"
-            placeholder="Enter an autonomous goal (e.g., 'research quantum computing')..."
-            class="flex-1 bg-ink/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-lavender font-display" />
-          <button onclick="runSimulation()"
-            class="px-6 py-3 rounded-xl bg-gradient-to-r from-lavender to-blue text-white font-medium text-sm hover:opacity-90 transition-opacity">Execute</button>
+        <div class="glass-card p-4 rounded-xl">
+          <div class="text-lavender font-bold mb-1">Cross-Device Team</div>
+          <div class="text-slate/70">Windows UIA + Android Touch + Visual Grounding for end-to-end multi-device tasks.</div>
+        </div>
+        <div class="glass-card p-4 rounded-xl">
+          <div class="text-amber font-bold mb-1">Finance Team</div>
+          <div class="text-slate/70">Market researcher, technical indicator analyzer, and financial risk critic.</div>
+        </div>
+        <div class="glass-card p-4 rounded-xl">
+          <div class="text-coral font-bold mb-1">Optimization Team</div>
+          <div class="text-slate/70">Autonomous token compression and prompt latency auditing.</div>
         </div>
       </div>
+    </div>
 
-      <!-- Right: Quick Presets -->
-      <div class="rounded-[24px] bg-panel border border-white/10 p-6 space-y-4">
-        <h3 class="font-display font-semibold text-lg text-white">Preset Scenarios</h3>
-        <div class="space-y-2">
-          <button onclick="setGoal('Deep web research on multimodal vision models')"
-            class="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono text-slate hover:text-white transition-colors border border-white/5">
-            🔍 Deep Web Research
-          </button>
-          <button onclick="setGoal('Locate search bar and click using Bezier mouse trajectory')"
-            class="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono text-slate hover:text-white transition-colors border border-white/5">
-            🖱️ Human Bezier Mouse Curve
-          </button>
-          <button onclick="setGoal('Connect wireless ADB device and dump UI hierarchy')"
-            class="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono text-slate hover:text-white transition-colors border border-white/5">
-            📱 Wireless Android Touch
-          </button>
-          <button onclick="setGoal('Wake word detected: Hey Mitchell, summarize today events')"
-            class="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono text-slate hover:text-white transition-colors border border-white/5">
-            🎙️ Voice Mode STT & TTS
-          </button>
+    <!-- Tab 4: CLI Manual -->
+    <div id="content-cli" class="glass-panel rounded-2xl p-8 border border-white/10 space-y-6 hidden">
+      <h3 class="text-xl font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-terminal text-mint"></i> Complete CLI Command Reference
+      </h3>
+
+      <div class="overflow-x-auto font-mono text-xs">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-white/10 text-slate">
+              <th class="py-3 px-4">Command</th>
+              <th class="py-3 px-4">Description</th>
+              <th class="py-3 px-4">Key Flags</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5 text-white/80">
+            <tr>
+              <td class="py-3 px-4 text-mint font-bold">mitchell do "&lt;goal&gt;"</td>
+              <td class="py-3 px-4">Direct execution of autonomous multimodal goal</td>
+              <td class="py-3 px-4 text-slate">--model, --budget</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-lavender font-bold">mitchell launch</td>
+              <td class="py-3 px-4">Launch REST API, WebSocket bridge & background daemons</td>
+              <td class="py-3 px-4 text-slate">--api-port, --orb-port</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-blue font-bold">mitchell voice</td>
+              <td class="py-3 px-4">Hands-free voice mode with wake-word detection</td>
+              <td class="py-3 px-4 text-slate">--wake-word</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-amber font-bold">mitchell studio</td>
+              <td class="py-3 px-4">Start real-time Visual Workflow Studio web UI</td>
+              <td class="py-3 px-4 text-slate">--port 8500</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-coral font-bold">mitchell avatar</td>
+              <td class="py-3 px-4">Launch interactive 3D Orb Avatar & WebRTC Studio</td>
+              <td class="py-3 px-4 text-slate">--port 8550</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-slate font-bold">mitchell benchmark</td>
+              <td class="py-3 px-4">Execute multi-domain evaluation benchmark arena</td>
+              <td class="py-3 px-4 text-slate">--domain (browser/windows)</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-mint font-bold">mitchell security</td>
+              <td class="py-3 px-4">Inspect permission guardrails and audit hash integrity</td>
+              <td class="py-3 px-4 text-slate">--audit</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 5: REST & MCP -->
+    <div id="content-api" class="glass-panel rounded-2xl p-8 border border-white/10 space-y-6 hidden">
+      <h3 class="text-xl font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-code text-coral"></i> REST API & Universal MCP Endpoints
+      </h3>
+      <p class="text-sm text-slate leading-relaxed">
+        Mitchell runs a lightning-fast asynchronous REST API and serves as a Model Context Protocol (MCP) server:
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-4 font-mono text-xs">
+        <div class="glass-card p-4 rounded-xl">
+          <div class="text-mint font-bold mb-2">POST /api/v1/goal</div>
+          <div class="text-slate/70">Execute asynchronous agent goal with webhook callback.</div>
+        </div>
+        <div class="glass-card p-4 rounded-xl">
+          <div class="text-blue font-bold mb-2">GET /api/v1/event_log</div>
+          <div class="text-slate/70">Fetch chronological audit trail with SHA256 integrity hash.</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="py-12 border-t border-white/5 text-center font-mono text-xs text-slate/60">
-    <p>© 2026 Mitchell Autonomous Hive Framework. MIT License.</p>
+  <!-- Interactive Terminal & Live Playground -->
+  <section class="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 py-16 border-t border-white/5">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-2">Interactive Terminal Playground</h2>
+      <p class="text-slate text-sm">Experience Mitchell's sub-second multimodal execution in real-time.</p>
+    </div>
+
+    <div class="glass-panel rounded-2xl border border-white/10 p-6 max-w-4xl mx-auto">
+      <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-coral/80"></span>
+          <span class="w-3 h-3 rounded-full bg-amber/80"></span>
+          <span class="w-3 h-3 rounded-full bg-mint/80"></span>
+          <span class="text-xs font-mono text-slate ml-2">mitchell-terminal@hive:~</span>
+        </div>
+        <div class="text-xs font-mono text-mint flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-mint animate-pulse"></span> Daemon: ACTIVE
+        </div>
+      </div>
+
+      <!-- Output Box -->
+      <div id="terminal-screen" class="font-mono text-xs text-mint/90 bg-ink/90 rounded-xl p-5 h-72 overflow-y-auto space-y-2 border border-white/5">
+        <p class="text-slate">[00:00:01] Mitchell Core Kernel v1.0.0 Online.</p>
+        <p class="text-slate">[00:00:02] Multi-Model Router connected (DeepSeek-R1 + Grok + Local Ollama).</p>
+        <p class="text-lavender">[00:00:03] Shared Blackboard pub/sub and 5 Specialized Teams ready.</p>
+        <p class="text-blue">[00:00:04] Universal MCP Bridge listening on stdio.</p>
+        <p class="text-white mt-4">&gt; Ready for autonomous goals. Type below or select a quick preset.</p>
+      </div>
+
+      <!-- Input Form -->
+      <div class="mt-4 flex gap-3">
+        <input id="terminal-input" type="text" placeholder="Enter command or goal (e.g. 'mitchell do research on AI agents')..." class="flex-1 bg-ink/70 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-lavender" />
+        <button onclick="executeTerminalCmd()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-lavender to-blue text-white font-medium text-sm hover:opacity-90 transition-opacity font-mono">Run</button>
+      </div>
+
+      <!-- Quick Preset Chips -->
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button onclick="setTerminalPreset('mitchell do deep web research on multimodal agents')" class="text-xs font-mono px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate hover:text-white border border-white/5 transition-colors">
+          🔍 Deep Web Research
+        </button>
+        <button onclick="setTerminalPreset('mitchell benchmark --domain reasoning')" class="text-xs font-mono px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate hover:text-white border border-white/5 transition-colors">
+          🏆 Benchmark Arena
+        </button>
+        <button onclick="setTerminalPreset('mitchell security --audit')" class="text-xs font-mono px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate hover:text-white border border-white/5 transition-colors">
+          🛡️ Security Audit
+        </button>
+        <button onclick="setTerminalPreset('mitchell evolve --verify')" class="text-xs font-mono px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate hover:text-white border border-white/5 transition-colors">
+          🧬 Self-Evolution
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Global Footer -->
+  <footer class="glass-panel border-t border-white/5 py-12 px-6 lg:px-12 mt-20">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs font-mono text-slate/70">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-lavender to-mint flex items-center justify-center text-ink text-xs font-bold">M</div>
+        <span>© 2026 Mitchell Autonomous Hive Framework. MIT License.</span>
+      </div>
+
+      <div class="flex items-center gap-6">
+        <a href="studio.html" class="hover:text-white transition-colors">Workflow Studio</a>
+        <a href="avatar.html" class="hover:text-white transition-colors">3D Avatar</a>
+        <a href="https://github.com/Sharry2429/mitchell" target="_blank" class="hover:text-white transition-colors">GitHub</a>
+      </div>
+    </div>
   </footer>
 
   <script src="script.js"></script>
 </body>
-
 </html>

@@ -1,70 +1,149 @@
-// Interactive Simulator Controller
+/**
+ * Mitchell Documentation & Developer Portal Interactive Scripts
+ */
 
-let currentMode = 'windows';
+// 1. Theme Switcher
+function changeTheme(themeName) {
+  if (themeName === 'default') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', themeName);
+  }
+  localStorage.setItem('mitchell-theme', themeName);
+}
 
-function setMode(mode) {
-  currentMode = mode;
-  const title = document.getElementById('active-pillar-title');
-  const btnWin = document.getElementById('btn-windows');
-  const btnAnd = document.getElementById('btn-android');
-  const btnBro = document.getElementById('btn-browser');
+// Restore saved theme on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('mitchell-theme');
+  if (savedTheme) {
+    const selector = document.getElementById('theme-selector');
+    if (selector) selector.value = savedTheme;
+    changeTheme(savedTheme);
+  }
+});
 
-  [btnWin, btnAnd, btnBro].forEach(b => {
-    b.className = "px-6 py-2.5 rounded-xl text-sm font-display font-medium text-slate hover:text-white";
+// 2. Install Tab Switcher
+const installCommands = {
+  ps1: 'powershell -ExecutionPolicy Bypass -File scripts\\install.ps1',
+  sh: 'bash scripts/install.sh',
+  docker: 'docker compose up -d',
+  sdk: 'pip install -e .',
+};
+
+function setInstallTab(tabKey) {
+  const cmdElem = document.getElementById('install-cmd');
+  if (cmdElem && installCommands[tabKey]) {
+    cmdElem.textContent = installCommands[tabKey];
+  }
+
+  const tabButtons = document.querySelectorAll('#install-tabs button');
+  tabButtons.forEach(btn => {
+    btn.className = 'px-2.5 py-1 text-xs font-mono rounded-md text-slate hover:text-white';
   });
 
-  if (mode === 'windows') {
-    btnWin.className = "px-6 py-2.5 rounded-xl text-sm font-display font-medium text-white bg-white/10";
-    title.textContent = "Pillar: Windows UIA Automation";
-    logOutput("Switched active focus to Native Windows UIA pillar.");
-  } else if (mode === 'android') {
-    btnAnd.className = "px-6 py-2.5 rounded-xl text-sm font-display font-medium text-white bg-white/10";
-    title.textContent = "Pillar: Wireless Android Touch";
-    logOutput("Switched active focus to Android Wireless ADB pillar.");
-  } else {
-    btnBro.className = "px-6 py-2.5 rounded-xl text-sm font-display font-medium text-white bg-white/10";
-    title.textContent = "Pillar: Playwright Browser & Deep Research";
-    logOutput("Switched active focus to Playwright Browser & Research pillar.");
+  const activeBtn = document.getElementById(`tab-${tabKey}`);
+  if (activeBtn) {
+    activeBtn.className = 'px-2.5 py-1 text-xs font-mono rounded-md bg-white/10 text-white';
   }
 }
 
-function setGoal(goal) {
-  document.getElementById('goal-input').value = goal;
+function copyInstallCmd() {
+  const cmdElem = document.getElementById('install-cmd');
+  const copyBtn = document.getElementById('copy-btn');
+  if (cmdElem && copyBtn) {
+    navigator.clipboard.writeText(cmdElem.textContent.trim());
+    copyBtn.innerHTML = '<i class="fa-solid fa-check text-mint"></i> Copied!';
+    setTimeout(() => {
+      copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+    }, 2000);
+  }
 }
 
-function logOutput(msg, color = 'text-mint') {
-  const box = document.getElementById('console-output');
-  const time = new Date().toTimeString().split(' ')[0];
-  const p = document.createElement('p');
-  p.className = color;
-  p.textContent = `[${time}] ${msg}`;
-  box.appendChild(p);
-  box.scrollTop = box.scrollHeight;
-}
-
-function runSimulation() {
-  const input = document.getElementById('goal-input');
-  const goal = input.value.trim();
-  if (!goal) return;
-
-  logOutput(`Target Goal Received: "${goal}"`, 'text-lavender');
-  logOutput("1. Fast Intent Analyzer: Evaluating goal complexity...", 'text-slate');
+// 3. Documentation Section Tabs Switcher
+function showDocTab(tabName) {
+  const tabs = ['quickstart', 'sdk', 'architecture', 'cli', 'api'];
   
-  setTimeout(() => {
-    logOutput("2. Goal Classifier: Formulating structured TaskGraph...", 'text-slate');
-  }, 400);
+  tabs.forEach(t => {
+    const content = document.getElementById(`content-${t}`);
+    const btn = document.getElementById(`btn-doc-${t}`);
+    
+    if (content) {
+      if (t === tabName) {
+        content.classList.remove('hidden');
+      } else {
+        content.classList.add('hidden');
+      }
+    }
 
-  setTimeout(() => {
-    logOutput("3. Critic Pass: Verified pre-conditions & safety invariants.", 'text-slate');
-  }, 800);
+    if (btn) {
+      if (t === tabName) {
+        btn.className = 'tab-btn active px-4 py-2 rounded-lg text-xs font-mono';
+      } else {
+        btn.className = 'tab-btn px-4 py-2 rounded-lg text-xs font-mono text-slate hover:text-white';
+      }
+    }
+  });
+}
 
-  setTimeout(() => {
-    logOutput("4. Hive Router: Dispatched subtasks to specialized worker agents.", 'text-slate');
-  }, 1200);
+// 4. Interactive Terminal Emulator
+function setTerminalPreset(cmdText) {
+  const input = document.getElementById('terminal-input');
+  if (input) {
+    input.value = cmdText;
+    executeTerminalCmd();
+  }
+}
 
-  setTimeout(() => {
-    logOutput(`✓ Execution Completed Successfully across ${currentMode.toUpperCase()} environment!`, 'text-mint font-semibold');
-  }, 1800);
+function executeTerminalCmd() {
+  const input = document.getElementById('terminal-input');
+  const screen = document.getElementById('terminal-screen');
+  if (!input || !screen) return;
+
+  const rawCmd = input.value.trim();
+  if (!rawCmd) return;
 
   input.value = '';
+
+  // Append user command
+  const timeStr = new Date().toTimeString().split(' ')[0];
+  const userP = document.createElement('p');
+  userP.className = 'text-white font-bold';
+  userP.textContent = `[${timeStr}] $ ${rawCmd}`;
+  screen.appendChild(userP);
+
+  // Simulate realistic autonomous hive processing
+  const responseP = document.createElement('p');
+  responseP.className = 'text-lavender animate-pulse';
+  responseP.textContent = `[${timeStr}] 🧠 Manager Loop: Decomposing goal and dispatching specialized agents...`;
+  screen.appendChild(responseP);
+  screen.scrollTop = screen.scrollHeight;
+
+  setTimeout(() => {
+    responseP.classList.remove('animate-pulse');
+    responseP.className = 'text-mint';
+
+    if (rawCmd.includes('benchmark')) {
+      responseP.innerHTML = `[${timeStr}] 🏆 <strong>Benchmark Arena Complete:</strong> 26/26 Scenarios Passed (100.0% Pass Rate). Cost: ₹0.00.`;
+    } else if (rawCmd.includes('security')) {
+      responseP.innerHTML = `[${timeStr}] 🛡️ <strong>Security Audit Passed:</strong> SHA256 Log Hash Chain Validated. Risk Policy: Active.`;
+    } else if (rawCmd.includes('evolve')) {
+      responseP.innerHTML = `[${timeStr}] 🧬 <strong>Self-Evolution Engine:</strong> AST Inspection clean, 0 syntax violations. Self-repair ready.`;
+    } else {
+      responseP.innerHTML = `[${timeStr}] ✓ <strong>Autonomous Task Succeeded:</strong> Claim posted to Blackboard topic <code>#results</code>. Tokens: 412 (₹0.003).`;
+    }
+
+    screen.scrollTop = screen.scrollHeight;
+  }, 900);
 }
+
+// Allow Enter key to trigger terminal
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('terminal-input');
+  if (input) {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        executeTerminalCmd();
+      }
+    });
+  }
+});
