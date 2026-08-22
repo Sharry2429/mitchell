@@ -1,20 +1,20 @@
-/* Mitchell Universal Natural Modern Design System */
+/* Mitchell & Grok Minimalist Modern Design System */
 
 :root {
-  --bg-color: #090a0f;
-  --panel-color: #10121a;
-  --panel-hover: #151824;
-  --panel-border: rgba(255, 255, 255, 0.07);
-  --text-primary: #f0f2f8;
-  --text-secondary: #8e95ab;
-  --text-muted: #585e73;
-  --accent-lavender: #a8a0e5;
-  --accent-blue: #70a8e8;
-  --accent-mint: #7dcfa3;
-  --accent-coral: #e88a7d;
-  --accent-amber: #e8c070;
-  --code-bg: #07080c;
-  --code-border: rgba(255, 255, 255, 0.08);
+  --bg-color: #000000;
+  --panel-color: #0c0c0f;
+  --panel-hover: #141418;
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --text-primary: #ffffff;
+  --text-secondary: #999999;
+  --text-muted: #555555;
+  --accent-primary: #ffffff;
+  --accent-cyan: #00e5ff;
+  --accent-mint: #00ff88;
+  --accent-coral: #ff4444;
+  --accent-amber: #ff9900;
+  --code-bg: #060608;
+  --code-border: rgba(255, 255, 255, 0.1);
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --transition-smooth: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -28,18 +28,18 @@ body {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-color);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Natural Glassmorphism & Panels */
@@ -55,7 +55,7 @@ body {
 }
 .glass-card:hover {
   background: var(--panel-hover);
-  border-color: rgba(168, 160, 229, 0.25);
+  border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
 }
 
@@ -66,12 +66,13 @@ body {
 }
 .tab-btn:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 .tab-btn.active {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  border-color: var(--accent-lavender);
+  background: #ffffff;
+  color: #000000;
+  font-weight: 600;
+  border-color: #ffffff;
 }
 
 /* Code Snippets & Copy */
@@ -89,34 +90,34 @@ body {
   right: 10px;
   padding: 4px 10px;
   font-size: 11px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   color: var(--text-secondary);
   cursor: pointer;
   transition: var(--transition-smooth);
 }
 .copy-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
 }
 
 /* Gradients and Highlights */
 .gradient-text {
-  background: linear-gradient(135deg, var(--accent-lavender), var(--accent-blue) 40%, var(--accent-mint));
+  background: linear-gradient(135deg, #ffffff 0%, #00e5ff 50%, #00ff88 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* Filter search input */
 .search-input {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--panel-border);
   color: var(--text-primary);
   transition: var(--transition-smooth);
 }
 .search-input:focus {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: var(--accent-lavender);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
   outline: none;
 }

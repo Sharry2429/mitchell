@@ -1,18 +1,37 @@
-/* Mitchell Dynamic Theme Engine Palettes */
+/* Mitchell & Grok Dynamic Theme Engine Palettes */
 
 :root {
-  --bg-color: #08090b;
-  --panel-color: #0f1015;
+  --bg-color: #000000;
+  --panel-color: #0c0c0f;
+  --panel-hover: #141418;
+  --panel-border: rgba(255, 255, 255, 0.1);
   --text-primary: #ffffff;
-  --text-secondary: #8890a8;
-  --accent-primary: #a8a0e5; /* Lavender */
-  --accent-secondary: #70a8e8; /* Blue */
-  --accent-mint: #7dcfa3;
+  --text-secondary: #999999;
+  --text-muted: #555555;
+  --accent-primary: #ffffff;
+  --accent-secondary: #00e5ff;
+  --accent-mint: #00ff88;
+  --accent-amber: #ff9900;
+  --accent-coral: #ff4444;
+}
+
+[data-theme="oled"] {
+  --bg-color: #000000;
+  --panel-color: #080808;
+  --panel-hover: #121212;
+  --panel-border: rgba(255, 255, 255, 0.12);
+  --text-primary: #ffffff;
+  --text-secondary: #777777;
+  --accent-primary: #ffffff;
+  --accent-secondary: #aaaaaa;
+  --accent-mint: #00ff88;
 }
 
 [data-theme="cyberpunk"] {
   --bg-color: #05050a;
   --panel-color: #0c0b1a;
+  --panel-hover: #16152b;
+  --panel-border: rgba(255, 0, 127, 0.3);
   --text-primary: #00ffcc;
   --text-secondary: #ff007f;
   --accent-primary: #ff007f;
@@ -20,19 +39,11 @@
   --accent-mint: #00ff66;
 }
 
-[data-theme="oled"] {
-  --bg-color: #000000;
-  --panel-color: #080808;
-  --text-primary: #ffffff;
-  --text-secondary: #666666;
-  --accent-primary: #ffffff;
-  --accent-secondary: #888888;
-  --accent-mint: #44bb44;
-}
-
 [data-theme="solarized"] {
   --bg-color: #002b36;
   --panel-color: #073642;
+  --panel-hover: #0c4352;
+  --panel-border: rgba(181, 137, 0, 0.25);
   --text-primary: #fdf6e3;
   --text-secondary: #93a1a1;
   --accent-primary: #b58900;
@@ -43,6 +54,8 @@
 [data-theme="nordic"] {
   --bg-color: #2e3440;
   --panel-color: #3b4252;
+  --panel-hover: #434c5e;
+  --panel-border: rgba(136, 192, 208, 0.25);
   --text-primary: #eceff4;
   --text-secondary: #d8dee9;
   --accent-primary: #88c0d0;
