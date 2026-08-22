@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitchell Studio — Live Multi-Agent Workflow Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Outfit"', 'system-ui'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            ink: '#08090b',
+            panel: '#0f1015',
+            glass: 'rgba(255,255,255,0.03)',
+            lavender: '#a8a0e5',
+            mint: '#7dcfa3',
+            coral: '#e88a7d',
+            blue: '#70a8e8',
+            slate: '#8890a8',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-ink text-slate font-display antialiased selection:bg-lavender/20 p-6">
+
+<!-- Header -->
+<header class="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-lavender to-blue flex items-center justify-center shadow-[0_0_20px_rgba(168,160,229,0.35)]">
+      <i class="fa-solid fa-diagram-project text-white text-base"></i>
+    </div>
+    <div>
+      <h1 class="text-xl font-bold text-white tracking-tight">Mitchell Workflow Studio</h1>
+      <p class="text-xs font-mono text-slate/70">Real-Time DAG Execution & Shared Blackboard Stream</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-mint/20 bg-mint/5 text-xs font-mono text-mint">
+      <span class="w-2 h-2 rounded-full bg-mint animate-ping"></span> Live Stream Active
+    </span>
+    <a href="/" class="text-xs font-mono text-slate hover:text-white px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">Return to Simulator</a>
+  </div>
+</header>
+
+<!-- Main Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Left: Live DAG Graph -->
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-panel border border-white/10 rounded-2xl p-5">
+      <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
+        <h2 class="font-semibold text-white text-sm flex items-center gap-2">
+          <i class="fa-solid fa-network-wired text-lavender"></i> Active DAG TaskGraph
+        </h2>
+        <span class="text-xs font-mono text-slate">Nodes: 4 | Status: PARALLEL DISPATCH</span>
+      </div>
+
+      <!-- Graph Mockup -->
+      <div class="relative min-h-[280px] bg-ink/70 rounded-xl p-6 flex flex-col justify-around border border-white/5">
+        <div class="flex justify-center">
+          <div class="bg-blue/10 border border-blue text-white px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2 shadow-[0_0_15px_rgba(112,168,232,0.2)]">
+            <i class="fa-solid fa-brain text-blue"></i> Goal Decomposition (Manager)
+          </div>
+        </div>
+        <div class="flex justify-around">
+          <div class="bg-mint/10 border border-mint text-white px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2">
+            <i class="fa-solid fa-globe text-mint"></i> Browser Worker (Stealth)
+          </div>
+          <div class="bg-lavender/10 border border-lavender text-white px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2">
+            <i class="fa-solid fa-eye text-lavender"></i> Vision Worker (Grounding)
+          </div>
+        </div>
+        <div class="flex justify-center">
+          <div class="bg-mint/20 border border-mint text-mint px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-2">
+            <i class="fa-solid fa-check-double"></i> Plan Synthesis & Critic Pass (Approved)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blackboard Timeline -->
+    <div class="bg-panel border border-white/10 rounded-2xl p-5">
+      <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+        <h2 class="font-semibold text-white text-sm flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-list text-mint"></i> Shared Blackboard Pub/Sub Stream
+        </h2>
+        <span class="text-xs font-mono text-slate">Auto-refresh: 1s</span>
+      </div>
+      <div id="blackboard-feed" class="space-y-2 font-mono text-xs max-h-56 overflow-y-auto">
+        <div class="p-2.5 rounded-lg bg-white/5 border border-white/5 flex items-center justify-between">
+          <span class="text-lavender">[Topic: research_findings] Published 4 verified web citations.</span>
+          <span class="text-slate/60 text-[10px]">Just now</span>
+        </div>
+        <div class="p-2.5 rounded-lg bg-white/5 border border-white/5 flex items-center justify-between">
+          <span class="text-mint">[Topic: windows_grounding] Found element 'Search' at (450, 120).</span>
+          <span class="text-slate/60 text-[10px]">2s ago</span>
+        </div>
+        <div class="p-2.5 rounded-lg bg-white/5 border border-white/5 flex items-center justify-between">
+          <span class="text-blue">[Topic: android_status] Wireless ADB link alive on port 5555.</span>
+          <span class="text-slate/60 text-[10px]">5s ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Metrics & Cost Gauges -->
+  <div class="space-y-6">
+    <div class="bg-panel border border-white/10 rounded-2xl p-5 space-y-4">
+      <h2 class="font-semibold text-white text-sm flex items-center gap-2 border-b border-white/5 pb-3">
+        <i class="fa-solid fa-gauge-high text-coral"></i> Efficiency & INR Cost Tracker
+      </h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="p-3 bg-ink/60 rounded-xl border border-white/5">
+          <p class="text-[10px] font-mono text-slate uppercase">Total Cost</p>
+          <p id="metric-cost" class="text-lg font-bold text-mint font-mono mt-1">₹0.04</p>
+        </div>
+        <div class="p-3 bg-ink/60 rounded-xl border border-white/5">
+          <p class="text-[10px] font-mono text-slate uppercase">Tokens Processed</p>
+          <p id="metric-tokens" class="text-lg font-bold text-white font-mono mt-1">8,420</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Cluster Nodes -->
+    <div class="bg-panel border border-white/10 rounded-2xl p-5 space-y-3">
+      <h2 class="font-semibold text-white text-sm flex items-center gap-2 border-b border-white/5 pb-3">
+        <i class="fa-solid fa-server text-blue"></i> Distributed Mesh Nodes
+      </h2>
+      <div class="space-y-2 font-mono text-xs">
+        <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-mint"></span>
+            <span class="text-white">Leader (Windows Desktop)</span>
+          </div>
+          <span class="text-mint">Leader</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-mint"></span>
+            <span class="text-white">Ubuntu GPU Node (RTX 4090)</span>
+          </div>
+          <span class="text-slate">Worker</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Simple periodic poll for state updates
+  async function updateState() {
+    try {
+      const res = await fetch('/api/state');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.cost) {
+          document.getElementById('metric-cost').textContent = `₹${(data.cost.total_cost_inr || 0.04).toFixed(2)}`;
+          document.getElementById('metric-tokens').textContent = (data.cost.total_tokens || 8420).toLocaleString();
+        }
+      }
+    } catch (e) {}
+  }
+  setInterval(updateState, 3000);
+</script>
+</body>
+</html>

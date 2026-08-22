@@ -106,6 +106,17 @@ class SharedBlackboard:
         self._topics.clear()
         self._claims.clear()
 
+    def dump_state(self) -> Dict[str, Any]:
+        """Export full snapshot of active topics, entries, and claims."""
+        return {
+            "topics": {
+                t: [e.model_dump() for e in entries[-10:]]
+                for t, entries in self._topics.items()
+            },
+            "claims": dict(self._claims),
+            "total_topics": len(self._topics),
+        }
+
 
 blackboard = SharedBlackboard()
 

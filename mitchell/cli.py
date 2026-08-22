@@ -414,6 +414,35 @@ def plugin_command(
         console.print(table)
 
 
+@app.command(name="studio", help="Launch the real-time Visual Workflow Studio web UI.")
+def studio_command(
+    port: int = typer.Option(8500, help="Studio HTTP server port"),
+) -> None:
+    """Launch the visual workflow studio."""
+    from mitchell.studio import MitchellStudioServer
+
+    console.print(f"[bold green]🎨 Mitchell Visual Workflow Studio starting on http://127.0.0.1:{port}...[/bold green]")
+    server = MitchellStudioServer(host="127.0.0.1", port=port)
+    server.start()
+
+
+@app.command(name="benchmark", help="Execute multi-agent benchmarking evaluation arena.")
+def benchmark_command(
+    domain: Optional[str] = typer.Option(None, "--domain", "-d", help="Filter by domain (browser, windows, android, reasoning, vision)"),
+) -> None:
+    """Run benchmark evaluation suite."""
+    from mitchell.benchmark import benchmark_runner, BENCHMARK_SUITE
+
+    scenarios = BENCHMARK_SUITE
+    if domain:
+        scenarios = [s for s in BENCHMARK_SUITE if s.domain == domain]
+
+    console.print(f"[bold green]🏆 Running Mitchell Benchmark Arena ({len(scenarios)} challenges)...[/bold green]")
+    scorecard = benchmark_runner.run_suite(scenarios=scenarios)
+    report = scorecard.generate_markdown_report()
+    console.print(Panel(report, border_style="cyan", title="Benchmark Results"))
+
+
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""
     if goal is None:

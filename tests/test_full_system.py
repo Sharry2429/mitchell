@@ -416,6 +416,42 @@ def test_dynamic_plugin_loader(tmp_path: Any) -> None:
     assert len(plugin_tool.function("test")) == 128
 
 
+def test_studio_state_provider() -> None:
+    """Verify studio state aggregation across blackboard, cost, and event log."""
+    from mitchell.studio.server import studio_state
+
+    state = studio_state.get_full_state()
+    assert "blackboard" in state
+    assert "cost" in state
+    assert "recent_events" in state
+
+
+def test_benchmark_arena_runner() -> None:
+    """Verify benchmark scenario execution, scorecard metrics, and markdown leaderboard formatting."""
+    from mitchell.benchmark import BenchmarkRunner, BenchmarkScenario
+
+    custom_scenario = BenchmarkScenario(
+        id="bench_test_echo",
+        title="Simple Test Evaluation",
+        domain="reasoning",
+        goal="echo benchmark verification",
+        difficulty="easy",
+    )
+
+    runner = BenchmarkRunner()
+    scorecard = runner.run_suite(scenarios=[custom_scenario])
+    summary = scorecard.get_summary()
+
+    assert summary["total_scenarios"] == 1
+    assert summary["passed"] == 1
+    assert summary["pass_rate_pct"] == 100.0
+
+    report = scorecard.generate_markdown_report()
+    assert "# 🏆 Mitchell Autonomous Agent Benchmark Scorecard" in report
+    assert "bench_test_echo" in report
+
+
+
 
 
 
