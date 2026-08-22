@@ -105,6 +105,16 @@ class CalendarEngine:
         ]
         return [e.model_dump(mode="json") for e in sorted(upcoming, key=lambda x: x.start_time)]
 
+    def get_upcoming_events(self, days_ahead: int = 7) -> List[CalendarEvent]:
+        """Get CalendarEvent objects scheduled within the next N days."""
+        now = datetime.now(timezone.utc)
+        horizon = now + timedelta(days=days_ahead)
+        upcoming = [
+            e for e in self._events
+            if e.start_time >= (now - timedelta(hours=2)) and e.start_time <= horizon
+        ]
+        return sorted(upcoming, key=lambda x: x.start_time)
+
     def get_due_reminders(self) -> List[CalendarEvent]:
         """Check for events whose reminder window is currently active."""
         now = datetime.now(timezone.utc)

@@ -87,21 +87,21 @@ def parse_fast_intent(user_input: str) -> Optional[Intent]:
     if lower in ("self model", "self_model", "capabilities", "my capabilities", "cost", "budget"):
         return Intent(raw_input=text, action_type="self_model")
 
-    # JARVIS Daily Briefing
-    if lower in ("briefing", "daily briefing", "morning briefing", "jarvis briefing", "status report"):
+    # Dynamic Daily Briefing
+    if lower in ("briefing", "daily briefing", "morning briefing", "system briefing", "status report"):
         return Intent(
             raw_input=text,
             action_type="call_tool",
-            tool_name="jarvis_daily_briefing",
-            parameters={"user_name": "Sir"},
+            tool_name="system_generate_briefing",
+            parameters={"user_name": "User"},
         )
 
-    # Hardware Telemetry
+    # Dynamic Live Hardware Telemetry
     if lower in ("telemetry", "hardware", "system health", "cpu", "ram", "specs", "system status"):
         return Intent(
             raw_input=text,
             action_type="call_tool",
-            tool_name="jarvis_get_telemetry",
+            tool_name="system_get_telemetry",
             parameters={},
         )
 

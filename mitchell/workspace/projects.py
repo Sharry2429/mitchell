@@ -132,6 +132,8 @@ class ProjectEngine:
         except Exception:
             return None
 
+    get_board = load_board
+
     def list_boards(self) -> List[Dict[str, Any]]:
         """List all project boards with progress overview."""
         files = self.storage.list_files(sub_dir="projects")

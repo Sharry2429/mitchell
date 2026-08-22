@@ -152,6 +152,41 @@ async def test_end_to_end_manager_loop_execution() -> None:
     res_wa = manager.receive("whatsapp +14155550000 Status update complete")
     assert "[Tool: comms_send_whatsapp]" in res_wa
 
+    # Fast Telemetry intent execution
+    res_telem = manager.receive("telemetry")
+    assert "[Tool: system_get_telemetry]" in res_telem
+
+    # Fast Briefing intent execution
+    res_briefing = manager.receive("briefing")
+    assert "[Tool: system_generate_briefing]" in res_briefing
+
     # Planner path
     res_plan = manager.receive("create document titled Architecture Brief with content System Architecture Overview")
     assert "Architecture Brief" in res_plan or "success" in res_plan.lower()
+
+
+@pytest.mark.anyio
+async def test_dynamic_system_telemetry_and_briefing() -> None:
+    """Verify live dynamic system telemetry and AI-synthesized briefing generation."""
+    from mitchell.system import dynamic_briefing, live_system_monitor
+
+    # Live telemetry
+    metrics = live_system_monitor.get_live_metrics()
+    assert metrics.os_name != ""
+    assert metrics.ram_total_gb > 0
+    assert metrics.disk_total_gb > 0
+    assert metrics.uptime_seconds >= 0
+
+    summary = live_system_monitor.format_summary()
+    assert "CPU:" in summary
+    assert "RAM:" in summary
+
+    # Dynamic briefing
+    briefing = await dynamic_briefing.generate_dynamic_briefing(user_name="Mitchell Developer", use_llm=False)
+    assert "Mitchell AI Intelligence Briefing" in briefing.title
+    assert "Hardware:" in briefing.executive_synthesis
+    assert briefing.spoken_summary != ""
+
+    md = dynamic_briefing.format_markdown(briefing)
+    assert "Live Hardware Telemetry" in md
+    assert "Mitchell AI Executive Synthesis" in md
