@@ -1,0 +1,51 @@
+/* Mitchell Dynamic Theme Engine Palettes */
+
+:root {
+  --bg-color: #08090b;
+  --panel-color: #0f1015;
+  --text-primary: #ffffff;
+  --text-secondary: #8890a8;
+  --accent-primary: #a8a0e5; /* Lavender */
+  --accent-secondary: #70a8e8; /* Blue */
+  --accent-mint: #7dcfa3;
+}
+
+[data-theme="cyberpunk"] {
+  --bg-color: #05050a;
+  --panel-color: #0c0b1a;
+  --text-primary: #00ffcc;
+  --text-secondary: #ff007f;
+  --accent-primary: #ff007f;
+  --accent-secondary: #00e5ff;
+  --accent-mint: #00ff66;
+}
+
+[data-theme="oled"] {
+  --bg-color: #000000;
+  --panel-color: #080808;
+  --text-primary: #ffffff;
+  --text-secondary: #666666;
+  --accent-primary: #ffffff;
+  --accent-secondary: #888888;
+  --accent-mint: #44bb44;
+}
+
+[data-theme="solarized"] {
+  --bg-color: #002b36;
+  --panel-color: #073642;
+  --text-primary: #fdf6e3;
+  --text-secondary: #93a1a1;
+  --accent-primary: #b58900;
+  --accent-secondary: #cb4b16;
+  --accent-mint: #859900;
+}
+
+[data-theme="nordic"] {
+  --bg-color: #2e3440;
+  --panel-color: #3b4252;
+  --text-primary: #eceff4;
+  --text-secondary: #d8dee9;
+  --accent-primary: #88c0d0;
+  --accent-secondary: #81a1c1;
+  --accent-mint: #a3be8c;
+}

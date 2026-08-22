@@ -535,6 +535,42 @@ def test_screen_annotator_and_recorder() -> None:
     assert "Step 1. Click on `Search Button`" in md
 
 
+def test_python_sdk_client() -> None:
+    """Verify programmatic Mitchell Python SDK client connectivity and methods."""
+    import mitchell
+
+    client = mitchell.connect()
+    assert client is not None
+
+    # Test SDK execution
+    res = client.do("echo SDK connectivity verification")
+    assert bool(res)
+
+    # Test SDK namespaces
+    assert hasattr(client, "voice")
+    assert hasattr(client, "screen")
+    assert hasattr(client, "mesh")
+    assert hasattr(client, "queue")
+
+    nodes = client.mesh.list_nodes()
+    assert len(nodes) >= 1
+
+
+def test_finance_team_analysis() -> None:
+    """Verify autonomous financial market intelligence team and report generation."""
+    from mitchell.hive.teams.finance import finance_team
+
+    report = finance_team.analyze_ticker(ticker="NVDA", horizon="short_term")
+    assert report.ticker == "NVDA"
+    assert report.confidence_score > 0.8
+    assert "RSI_14" in report.technical_indicators
+    assert len(report.catalysts) > 0
+
+    mission_res = finance_team.run_team_mission("Analyze TSLA stock")
+    assert mission_res["status"] == "success"
+
+
+
 
 
 

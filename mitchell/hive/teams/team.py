@@ -44,6 +44,11 @@ class TeamCoordinator:
             description="System optimization, token compression, and prompt audit team",
             agent_ids=["efficiency_worker"],
         ))
+        self.register_team(AgentTeam(
+            team_name="finance_team",
+            description="Autonomous financial intelligence, stock/crypto analysis, technical indicators, and risk critique",
+            agent_ids=["browser_worker", "vision_worker"],
+        ))
 
     def register_team(self, team: AgentTeam) -> None:
         """Register a team formation."""
