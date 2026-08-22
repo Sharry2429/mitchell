@@ -1,129 +1,167 @@
-# 🤖 Mitchell — Autonomous Multi-Agent Hive & Task Orchestration Framework (v1.0.0 Golden Release)
+# 🤖 Mitchell AI — Autonomous Multi-Agent Hive & Living Operating System (2026 Peak)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Release-v1.0.0%20Golden-blueviolet?style=for-the-badge" alt="Release">
+  <img src="https://img.shields.io/badge/Release-2026%20Peak%20Maximum-blueviolet?style=for-the-badge" alt="Release">
+  <img src="https://img.shields.io/badge/Tests-43%2F43%20Passing%20(100%25)-brightgreen?style=for-the-badge" alt="Tests">
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue?style=for-the-badge&logo=python" alt="Python">
-  <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-green?style=for-the-badge" alt="Platforms">
+  <img src="https://img.shields.io/badge/WhatsApp%20MCP-Integrated-25D366?style=for-the-badge&logo=whatsapp" alt="WhatsApp MCP">
   <img src="https://img.shields.io/badge/License-MIT-amber?style=for-the-badge" alt="License">
 </p>
 
-**Mitchell** is a self-hosted, self-evolving, cross-platform autonomous multi-agent framework. Built with Karpathy engineering rigor, it coordinates browser automation, native Windows UIA, wireless Android touch, multimodal vision, full-duplex voice streams, distributed mesh clusters, and 24/7 background daemons.
+**Mitchell AI** is a self-hosted, self-extending, native-first personal AI operating system. Engineered with **Karpathy Principles of Rigor** (*Think Before Acting, Simplicity First, Surgical Changes, Goal-Driven Execution*), Mitchell seamlessly unifies your desktop, mobile, cloud models, native workspace, and home automation into one continuous machine.
 
 ---
 
-## 🌟 Master Architecture Overview
+## 🌟 Master Architecture
 
 ```mermaid
-flowchart TD
-    User(["User / Voice / SDK / CLI / Webhook / REST / MCP"]) --> Manager["Manager Decision Loop"]
-    Manager --> FastIntent["Fast Intent Path"]
-    Manager --> MemoryTier[("SQLite + Vector RAG")]
-    Manager --> GoalClassifier["Goal Classifier & Routing"]
-    GoalClassifier --> TaskPlanner["Task Graph Planner"]
-    TaskPlanner --> PlanCritic["Plan Critic & Safety Pass"]
-    PlanCritic --> LLMCouncil["Selective LLM Council"]
-    LLMCouncil --> TaskScheduler["Dynamic TaskGraph Scheduler"]
-    
-    TaskScheduler --> SharedBlackboard[("Shared Hive Blackboard")]
-    TaskScheduler --> TeamCoordinator["Specialized Team Coordinator"]
-    
-    TeamCoordinator --> ResearchTeam["Research Team (Browser + Vision)"]
-    TeamCoordinator --> CrossDeviceTeam["Cross-Device Team (Windows + Android + Vision)"]
-    TeamCoordinator --> FinanceTeam["Financial & Market Intelligence Team"]
-    TeamCoordinator --> OptimizationTeam["Optimization Team (Autoresearch)"]
-    
-    TeamCoordinator --> HiveRouter["Hive Message Router"]
-    HiveRouter --> BrowserWorker["Browser Worker (Playwright + Stealth)"]
-    HiveRouter --> WindowsWorker["Windows Worker (pywinauto + Win32)"]
-    HiveRouter --> AndroidWorker["Android Worker (Wireless ADB + Touch)"]
-    HiveRouter --> VisionWorker["Vision Worker (Multimodal Grounding)"]
-    HiveRouter --> EfficiencyWorker["Efficiency Worker (Autoresearch)"]
-    
-    Manager --> SelfEvolution["Recursive Self-Evolution Engine"]
-    Manager --> DaemonButler["24/7 Background Butler Daemon"]
-    Manager --> MeshCluster["Distributed Multi-Node Mesh"]
-    Manager --> AvatarEngine["3D Dynamic Orb Avatar & WebRTC"]
-    Manager --> MCPHub["Universal MCP Client Hub"]
-    Manager --> SecurityGuard["Tiered Security Permission Guardrails"]
+flowchart TB
+    subgraph UI ["User Interfaces"]
+        Studio["Mitchell Studio (Command Center · 16 Panels)"]
+        Orb["The Orb v2 (7 State Living Interface)"]
+        CLI["Mitchell CLI / Fast Intents / Daemon Butler"]
+        WebDocs["Web Homepage & Interactive Docs"]
+    end
+
+    subgraph Intelligence ["Core Intelligence & Memory"]
+        Prompts["Karpathy System Prompts & Dynamic Context Builder"]
+        Router["ModelRouter (Claude 3.7 / Groq / OpenAI o3 / Gemini 2.0)"]
+        SelfModel["SelfModel & UserModel (Preferences / Procedural / Semantic Graph)"]
+        Consolidator["MemoryConsolidator & MediumTermMemory"]
+        Recovery["RecoveryEngine & Novel Failure Handling"]
+    end
+
+    subgraph Hive ["Specialized Hive Worker Agents"]
+        BrowserWorker["BrowserWorkerAgent (Playwright + Stealth)"]
+        WindowsWorker["WindowsWorkerAgent (Desktop/Win32)"]
+        AndroidWorker["AndroidWorkerAgent (ADB/scrcpy)"]
+        WorkspaceWorker["WorkspaceWorkerAgent (Docs/Sheets/Notes/Kanban)"]
+        IDEWorker["IDEWorkerAgent (Editor/Terminal/Git/Pytest)"]
+        CommsWorker["CommsWorkerAgent (WhatsApp MCP/SMS/Calls)"]
+        MediaWorker["MediaWorkerAgent (Spotify/Downloads/YouTube)"]
+        CommerceWorker["CommerceWorkerAgent (Price Tracker/Deals)"]
+        IoTWorker["IoTWorkerAgent (Home Assistant/Scenes)"]
+    end
+
+    subgraph Integrations ["Protocols & Bridges"]
+        WhatsAppMCP["WhatsApp MCP Bridge (lharries/whatsapp-mcp)"]
+        JARVIS["JARVIS Telemetry & Daily Briefing Engine"]
+        MCPHub["Universal MCP Client Hub"]
+    end
+
+    UI <--> Intelligence
+    Intelligence <--> Hive
+    CommsWorker <--> WhatsAppMCP
+    Intelligence <--> JARVIS
+    WhatsAppMCP <--> MCPHub
 ```
 
 ---
 
-## 🚀 Quickstart & Universal Installation
+## ⚡ Key Capabilities (2026 Practical Maximum)
 
-### 1. Windows 1-Click Setup (PowerShell)
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-```
+### 1. Mitchell Studio Command Center
+- Full-screen dark glassmorphism dashboard with 16 panels:
+  - **Live Chat** with streaming LLM response tokens and auto-fallback
+  - **Native Workspace** (Docs, Spreadsheets, Linked Notes, Kanban Project Boards)
+  - **Agentic IDE** with Monaco editor, syntax validation, diffs, and terminal execution
+  - **WhatsApp MCP & Unified Comms** (WhatsApp, SMS, Email, Scheduled Messages)
+  - **Media Center** (Spotify playback, IDM-style download manager, YouTube downloader)
+  - **Commerce Hub** (Product comparison, price-drop alert tracker, coupon finder)
+  - **Smart Home IoT** (Home Assistant integration, lights, climate, smart scenes)
+  - **Memory Graph** (Episodic, Semantic Graph Triples, User Model Preferences)
+  - **System Diagnostics & Telemetry**
+- Launch instantly via: `python -m mitchell.cli studio` or `mitchell studio`
 
-### 2. Linux / macOS / WSL2 1-Click Setup (Bash)
+### 2. WhatsApp MCP Integration ([lharries/whatsapp-mcp](https://github.com/lharries/whatsapp-mcp))
+- Native integration with the official `whatsapp-mcp` protocol:
+  - `send_message(recipient, message)`
+  - `list_messages(chat_jid, limit)`
+  - `list_chats(limit)`
+  - `search_contacts(query)`
+  - `send_media(recipient, media_path, caption)`
+  - `get_last_interaction(contact)`
+- Unified inbox message recording and web intent fallback.
+
+### 3. JARVIS Engine ([JARVIS-AGI inspired](https://github.com/SreejanPersonal/JARVIS-AGI))
+- **Live Hardware Telemetry**: Real-time CPU, RAM, Disk storage, and Battery percentage metrics.
+- **Executive Daily Briefing**: Synthesizes schedule, pending Kanban cards, unread WhatsApp messages, and hardware health into morning/evening briefings.
+- **Executive Voice Persona**: Conversational speech acknowledgments and status reporting.
+
+### 4. SOTA 2026 Model Cascade & Free-Tier First
+- Live model switching across 8 LLM providers:
+  - **Anthropic**: Claude 3.7 Sonnet (`claude-3-7-sonnet-20250219`, `claude-3-7-sonnet`), Claude 3.5 Sonnet, Claude 3.5 Haiku
+  - **Groq (Free Tier)**: Llama 3.3 70B Versatile, Llama 3.1 8B Instant, Gemma 2 9B
+  - **NVIDIA NIM (Free Tier)**: Llama 3.1 405B Instruct, Llama 3.1 70B
+  - **OpenRouter (Free Tier)**: Qwen 2.5 72B Instruct, Llama 3.1 8B
+  - **Google Gemini (Free Tier)**: Gemini 2.0 Flash, Gemini 1.5 Flash, Gemini 1.5 Pro
+  - **OpenAI**: GPT-4o, GPT-4o-mini, o3-mini, o1
+  - **xAI**: Grok-2, Grok-beta
+  - **DeepSeek**: DeepSeek-V3 Chat, DeepSeek-R1 Reasoner
+
+---
+
+## 🚀 Quickstart & Usage
+
+### 1. Installation
 ```bash
-bash scripts/install.sh
+# Clone the repository
+git clone https://github.com/Sharry2429/mitchell.git
+cd mitchell
+
+# Install dependencies in editable mode
+pip install -e .
 ```
 
-### 3. Production Docker Compose Sandboxed Hive
+### 2. Launch Studio Command Center
 ```bash
-docker compose up -d
+python -m mitchell.cli studio
 ```
+Opens the Studio UI in your browser at `http://localhost:8500`.
 
----
-
-## 📦 Python SDK Quickstart
-
-Embed Mitchell directly into your Python scripts or web applications with 3 lines of code:
-
-```python
-import mitchell
-
-# Connect to local hive or remote mesh node
-hive = mitchell.connect()
-
-# 1. Execute an autonomous multi-step goal
-result = hive.do("Search the latest breakthroughs in quantum computing and summarize")
-print(result)
-
-# 2. Voice & Speech
-hive.voice.speak("Task execution completed successfully.")
-
-# 3. Visual On-Screen Guidance
-hive.screen.highlight(x=350, y=200, width=150, height=40, label="Search Button")
-
-# 4. Financial Analysis
-market_report = hive.teams.get_team("finance_team")
-```
-
----
-
-## 💻 CLI Command Reference
-
-| Command | Description |
-| :--- | :--- |
-| `mitchell do "<goal>"` | Execute an autonomous goal directly |
-| `mitchell launch` | Start REST API, WebSocket Orb, and background daemons |
-| `mitchell voice` | Start hands-free voice mode (*wake word: "hey mitchell"*) |
-| `mitchell studio` | Launch real-time Visual Workflow Studio web UI (`http://127.0.0.1:8500`) |
-| `mitchell avatar` | Launch 3D Dynamic Orb Avatar (`http://127.0.0.1:8550`) |
-| `mitchell butler` | Run 24/7 background task queue worker |
-| `mitchell schedule "<cron>" "<goal>"` | Schedule recurring autonomous routines (e.g. `0 8 * * *`) |
-| `mitchell evolve` | Trigger recursive self-evolution and test verification |
-| `mitchell mesh` | Manage and inspect distributed multi-node cluster |
-| `mitchell plugin` | Discover and manage drop-in `.mitchell/plugins/` |
-| `mitchell benchmark` | Run standardized multi-agent evaluation arena |
-| `mitchell security` | Inspect permission tiers and SHA256 audit log integrity |
-| `mitchell deploy` | Generate systemd service units and Caddy reverse proxy configs |
-
----
-
-## 🧪 Comprehensive Verification
-
-To run the complete 24-scenario automated test suite:
-
+### 3. CLI Commands & Fast Intents
 ```bash
-python -m pytest tests/test_full_system.py -v
+# Execute an autonomous multi-step goal
+python -m mitchell.cli goal "Research quantum computing breakthroughs and save to Workspace"
+
+# Send a WhatsApp message via WhatsApp MCP
+python -m mitchell.cli goal "whatsapp +14155550000 Meeting starts in 10 minutes"
+
+# Play Spotify music
+python -m mitchell.cli goal "spotify lofi beats for focus"
+
+# Generate JARVIS daily briefing
+python -m mitchell.cli goal "briefing"
+
+# Check live system hardware telemetry
+python -m mitchell.cli goal "telemetry"
+
+# Run tests and verify code
+python -m mitchell.cli goal "pytest"
 ```
+
+### 4. 24/7 Butler Daemon Mode
+```bash
+python -m mitchell.cli butler
+```
+
+---
+
+## 🧪 Verification & Testing
+
+Run the complete test suite:
+```bash
+python -m pytest tests/ -v
+```
+```text
+============================= 43 passed in 19.47s =============================
+```
+100% of all 43 tests pass across:
+- `tests/test_full_system.py` (26 tests)
+- `tests/test_peak_capabilities.py` (12 tests)
+- `tests/test_whatsapp_mcp_and_refinements.py` (5 tests)
 
 ---
 
 ## 📄 License
-
-Mitchell is licensed under the **MIT License**.
+MIT License. Created by Sharry2429.

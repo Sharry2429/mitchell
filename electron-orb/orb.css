@@ -165,6 +165,52 @@ body {
   animation: pulse-rapid 0.8s infinite alternate;
 }
 
+/* 6. LISTENING: Cyan / Electric Blue Pulse */
+.orb-container.listening .orb-outer-ring {
+  border: 2px solid rgba(6, 182, 212, 0.9);
+  animation: pulse-expand 0.6s infinite;
+}
+
+.orb-container.listening .orb-core {
+  background: linear-gradient(135deg, #083344 0%, #164e63 100%);
+  border: 1.5px solid rgba(34, 211, 238, 0.9);
+  box-shadow: 0 0 35px rgba(6, 182, 212, 0.8);
+}
+
+.orb-container.listening .orb-inner-glow {
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.6) 0%, transparent 65%);
+  animation: pulse-rapid 0.6s infinite alternate;
+}
+
+/* 7. SPEAKING: Warm Golden Audio Wave */
+.orb-container.speaking .orb-outer-ring {
+  border: 2px dashed rgba(251, 191, 36, 0.8);
+  animation: rotate-ring 3s linear infinite, pulse-expand 1s infinite;
+}
+
+.orb-container.speaking .orb-core {
+  background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+  border: 1.5px solid rgba(251, 191, 36, 0.9);
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.7);
+}
+
+.orb-container.speaking .orb-inner-glow {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.5) 0%, transparent 65%);
+  animation: pulse-rapid 0.7s infinite alternate;
+}
+
+/* 8. SUCCESS: Vibrant Emerald Flash */
+.orb-container.success .orb-outer-ring {
+  border: 2px solid rgba(34, 197, 94, 0.9);
+  animation: pulse-expand 1.5s ease-out;
+}
+
+.orb-container.success .orb-core {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
+  border: 2px solid rgba(74, 222, 128, 1);
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.9);
+}
+
 /* 5. ERROR: Crimson Alert */
 .orb-container.error .orb-outer-ring {
   border: 2px solid rgba(239, 68, 68, 0.8);

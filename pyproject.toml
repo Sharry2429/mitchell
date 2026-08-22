@@ -29,6 +29,10 @@ dependencies = [
     "Pillow>=10.0.0",
     "requests>=2.32.0",
 
+    # Studio Command Center
+    "starlette>=0.37.0",
+    "uvicorn>=0.29.0",
+
     # Browser Pillar (cross-platform)
     "playwright>=1.42.0",
 

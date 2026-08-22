@@ -1,4 +1,4 @@
-"""Structured Task Graph Planner synthesizing executable subtask dependencies."""
+"""Structured Task Graph Planner synthesizing executable subtask dependencies across all Hive workers."""
 
 import uuid
 from typing import Any, Dict, List, Optional
@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from mitchell.core.event_log import event_log
 from mitchell.core.llm import model_router
 from mitchell.core.logging import logger
+from mitchell.core.prompts import MITCHELL_PLANNER_SYSTEM_PROMPT
 from mitchell.manager.classifier import GoalClassification
 
 
@@ -15,7 +16,7 @@ class TaskNode(BaseModel):
 
     id: str = Field(default_factory=lambda: f"task_{uuid.uuid4().hex[:6]}")
     title: str = Field(..., description="Short title of the subtask")
-    target_agent: str = Field(..., description="Target Hive agent ID (e.g. browser_worker, windows_worker, android_worker)")
+    target_agent: str = Field(..., description="Target Hive agent ID (e.g. browser_worker, windows_worker, workspace_worker, ide_worker, comms_worker, media_worker, commerce_worker, iot_worker)")
     action: str = Field(..., description="Specific worker action command")
     payload: Dict[str, Any] = Field(default_factory=dict, description="Action arguments")
     dependencies: List[str] = Field(default_factory=list, description="IDs of prerequisite tasks")
@@ -48,7 +49,55 @@ class TaskPlanner:
 
         nodes: List[TaskNode] = []
 
-        if classification.domain == "browser":
+        if classification.domain == "workspace":
+            nodes.append(TaskNode(
+                title="Execute workspace operation",
+                target_agent="workspace_worker",
+                action="summary" if "summary" in goal.lower() else "document",
+                payload={"title": goal[:40], "raw": goal},
+            ))
+
+        elif classification.domain == "ide":
+            nodes.append(TaskNode(
+                title="Execute IDE engineering task",
+                target_agent="ide_worker",
+                action="test" if "test" in goal.lower() or "pytest" in goal.lower() else ("command" if "run" in goal.lower() else "write_file"),
+                payload={"raw": goal, "command": goal},
+            ))
+
+        elif classification.domain == "comms":
+            nodes.append(TaskNode(
+                title="Execute communication dispatch",
+                target_agent="comms_worker",
+                action="whatsapp" if "whatsapp" in goal.lower() else ("sms" if "sms" in goal.lower() else "inbox"),
+                payload={"raw": goal, "message": goal},
+            ))
+
+        elif classification.domain == "media":
+            nodes.append(TaskNode(
+                title="Execute media playback / download",
+                target_agent="media_worker",
+                action="spotify" if "spotify" in goal.lower() or "music" in goal.lower() or "play" in goal.lower() else "download",
+                payload={"raw": goal, "query": goal, "url": self._extract_url_or_default(goal)},
+            ))
+
+        elif classification.domain == "commerce":
+            nodes.append(TaskNode(
+                title="Execute commerce search / tracking",
+                target_agent="commerce_worker",
+                action="track" if "track" in goal.lower() else ("coupons" if "coupon" in goal.lower() or "deal" in goal.lower() else "search"),
+                payload={"raw": goal, "query": goal},
+            ))
+
+        elif classification.domain == "iot":
+            nodes.append(TaskNode(
+                title="Execute smart home action",
+                target_agent="iot_worker",
+                action="scene" if "scene" in goal.lower() or "cinema" in goal.lower() or "focus" in goal.lower() else "light_on",
+                payload={"raw": goal, "scene": "cinema_mode" if "cinema" in goal.lower() else "focus_work"},
+            ))
+
+        elif classification.domain == "browser":
             # Direct or multi-step browser plan
             nodes.append(TaskNode(
                 title="Navigate to target URL",
@@ -81,7 +130,6 @@ class TaskPlanner:
             ))
 
         elif classification.domain == "multi_pillar":
-            # Example cross-pillar sequence
             t1 = TaskNode(
                 title="Fetch web information",
                 target_agent="browser_worker",
@@ -89,10 +137,10 @@ class TaskPlanner:
                 payload={"url": self._extract_url_or_default(goal)},
             )
             t2 = TaskNode(
-                title="Record data in Windows Notepad",
-                target_agent="windows_worker",
-                action="launch",
-                payload={"cmd": "notepad.exe"},
+                title="Record findings in Native Workspace",
+                target_agent="workspace_worker",
+                action="create_doc",
+                payload={"title": f"Report — {goal[:30]}", "content": goal},
                 dependencies=[t1.id],
             )
             nodes.extend([t1, t2])

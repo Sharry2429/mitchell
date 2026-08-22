@@ -476,6 +476,22 @@ def deploy_command(
         console.print(Panel(unit, title=f"Systemd Service Unit ({service})", border_style="green"))
 
 
+@app.command(name="studio", help="Launch Mitchell Studio — the absolute command center.")
+def studio_command(
+    host: str = typer.Option("127.0.0.1", help="Studio server bind address"),
+    port: int = typer.Option(8500, help="Studio server port"),
+) -> None:
+    """Launch the Studio Command Center web UI."""
+    import webbrowser
+    from mitchell.studio.server import MitchellStudioServer
+
+    console.print(f"[bold green]🚀 Mitchell Studio Command Center launching on http://{host}:{port}...[/bold green]")
+    console.print("[dim]Press Ctrl+C to stop.[/dim]")
+    webbrowser.open(f"http://{host}:{port}")
+    server = MitchellStudioServer(host=host, port=port)
+    server.start()
+
+
 @app.command(name="avatar", help="Launch interactive 3D Orb Avatar & live audio studio.")
 def avatar_command(
     port: int = typer.Option(8550, help="Avatar server port"),

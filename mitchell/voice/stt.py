@@ -34,12 +34,22 @@ MAX_RECORD_S = 30.0
 
 
 class SpeechToText:
-    """Cross-platform speech-to-text using Groq Whisper API."""
+    """Cross-platform speech-to-text using Groq Whisper API (free-tier priority)."""
 
     def __init__(self) -> None:
-        self.api_key = os.environ.get("GROQ_API_KEY", "")
-        self.model = "whisper-large-v3"
+        self.model = "whisper-large-v3-turbo"
         self.api_url = "https://api.groq.com/openai/v1/audio/transcriptions"
+
+    @property
+    def api_key(self) -> str:
+        """Dynamically resolve Groq API key."""
+        from mitchell.core.config import settings
+        from mitchell.core.providers import provider_registry
+        return (
+            os.environ.get("GROQ_API_KEY", "")
+            or getattr(settings, "groq_api_key", "")
+            or provider_registry.get_api_key("groq")
+        )
 
     def is_available(self) -> bool:
         """Check if STT is available on this platform."""

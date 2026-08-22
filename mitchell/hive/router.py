@@ -1,14 +1,20 @@
-"""Hive router for registering agents and dispatching messages across all pillars."""
+"""Hive router for registering agents and dispatching messages across all pillars and subsystems."""
 
 from typing import Any, Dict, List, Optional
 from mitchell.core.logging import logger
 from mitchell.hive.agents.android_worker import AndroidWorkerAgent
 from mitchell.hive.agents.base import BaseAgent
 from mitchell.hive.agents.browser_worker import BrowserWorkerAgent
+from mitchell.hive.agents.commerce_worker import CommerceWorkerAgent
+from mitchell.hive.agents.comms_worker import CommsWorkerAgent
 from mitchell.hive.agents.echo import EchoAgent
 from mitchell.hive.agents.efficiency_worker import EfficiencyWorkerAgent
+from mitchell.hive.agents.ide_worker import IDEWorkerAgent
+from mitchell.hive.agents.iot_worker import IoTWorkerAgent
+from mitchell.hive.agents.media_worker import MediaWorkerAgent
 from mitchell.hive.agents.vision_worker import VisionWorkerAgent
 from mitchell.hive.agents.windows_worker import WindowsWorkerAgent
+from mitchell.hive.agents.workspace_worker import WorkspaceWorkerAgent
 
 
 class HiveRouter:
@@ -16,13 +22,19 @@ class HiveRouter:
 
     def __init__(self) -> None:
         self._agents: Dict[str, BaseAgent] = {}
-        # Register default Hive agents across all pillars
+        # Register default Hive agents across all pillars and subsystems
         self.register_agent(EchoAgent())
         self.register_agent(BrowserWorkerAgent())
         self.register_agent(WindowsWorkerAgent())
         self.register_agent(AndroidWorkerAgent())
         self.register_agent(EfficiencyWorkerAgent())
         self.register_agent(VisionWorkerAgent())
+        self.register_agent(WorkspaceWorkerAgent())
+        self.register_agent(IDEWorkerAgent())
+        self.register_agent(CommsWorkerAgent())
+        self.register_agent(MediaWorkerAgent())
+        self.register_agent(CommerceWorkerAgent())
+        self.register_agent(IoTWorkerAgent())
 
     def register_agent(self, agent: BaseAgent) -> None:
         """Register an agent in the Hive registry."""

@@ -53,6 +53,7 @@ class Manager:
         self.memory_limit = memory_limit
         self.memory: List[Message] = []
         self.tool_registry = tool_registry or default_tool_registry
+        self.tool_registry.discover()
         self.hive = hive or default_hive_router
         self.event_log = events or default_event_log
         self.long_term = long_term or default_long_term_memory

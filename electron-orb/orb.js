@@ -1,7 +1,7 @@
 const orbContainer = document.getElementById('orb-container');
 
-// State classes mapping
-const STATES = ['idle', 'thinking', 'working', 'needs_attention', 'error'];
+// State classes mapping (7 Peak States)
+const STATES = ['idle', 'listening', 'thinking', 'speaking', 'working', 'success', 'needs_attention', 'error'];
 
 function setOrbStatus(status) {
   STATES.forEach(s => orbContainer.classList.remove(s));

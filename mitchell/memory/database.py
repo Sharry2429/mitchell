@@ -107,6 +107,70 @@ class MemoryDB:
                 )
             """)
 
+            # 6. User Model (continuously updated preferences, patterns, values, history)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS user_model (
+                    key TEXT PRIMARY KEY,
+                    category TEXT NOT NULL DEFAULT 'preference',
+                    value TEXT NOT NULL,
+                    confidence REAL DEFAULT 0.8,
+                    evidence_count INTEGER DEFAULT 1,
+                    source TEXT DEFAULT 'observed',
+                    first_observed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_observed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    contradicted_by TEXT
+                )
+            """)
+
+            # 7. Procedural Memory (how-to knowledge and learned procedures)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS procedural_memory (
+                    id TEXT PRIMARY KEY,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT NOT NULL,
+                    trigger_pattern TEXT,
+                    steps_json TEXT NOT NULL,
+                    success_count INTEGER DEFAULT 0,
+                    failure_count INTEGER DEFAULT 0,
+                    avg_duration_s REAL DEFAULT 0.0,
+                    confidence REAL DEFAULT 0.5,
+                    source TEXT DEFAULT 'learned',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # 8. Semantic Graph (concept relationships and associations)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS semantic_graph (
+                    id TEXT PRIMARY KEY,
+                    subject TEXT NOT NULL,
+                    predicate TEXT NOT NULL,
+                    object TEXT NOT NULL,
+                    confidence REAL DEFAULT 0.8,
+                    source TEXT DEFAULT 'inferred',
+                    evidence TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(subject, predicate, object)
+                )
+            """)
+
+            # 9. Medium-Term Memory (buffer between short-term chat and long-term storage)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS medium_term_memory (
+                    id TEXT PRIMARY KEY,
+                    content TEXT NOT NULL,
+                    context TEXT,
+                    importance REAL DEFAULT 0.5,
+                    access_count INTEGER DEFAULT 0,
+                    decay_factor REAL DEFAULT 1.0,
+                    source_episode_id TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP
+                )
+            """)
+
             conn.commit()
 
 

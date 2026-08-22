@@ -84,8 +84,82 @@ def parse_fast_intent(user_input: str) -> Optional[Intent]:
         return Intent(raw_input=text, action_type="list_skills")
 
     # Self-Model / Status
-    if lower in ("self model", "self_model", "capabilities", "my capabilities"):
+    if lower in ("self model", "self_model", "capabilities", "my capabilities", "cost", "budget"):
         return Intent(raw_input=text, action_type="self_model")
+
+    # JARVIS Daily Briefing
+    if lower in ("briefing", "daily briefing", "morning briefing", "jarvis briefing", "status report"):
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="jarvis_daily_briefing",
+            parameters={"user_name": "Sir"},
+        )
+
+    # Hardware Telemetry
+    if lower in ("telemetry", "hardware", "system health", "cpu", "ram", "specs", "system status"):
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="jarvis_get_telemetry",
+            parameters={},
+        )
+
+    # WhatsApp shortcut: "whatsapp <number> <message>" or "send whatsapp <number> <message>"
+    if lower.startswith("whatsapp ") or lower.startswith("send whatsapp "):
+        prefix = "send whatsapp " if lower.startswith("send whatsapp ") else "whatsapp "
+        remainder = text[len(prefix):].strip()
+        parts = remainder.split(maxsplit=1)
+        if len(parts) >= 2:
+            return Intent(
+                raw_input=text,
+                action_type="call_tool",
+                tool_name="comms_send_whatsapp",
+                parameters={"phone_number": parts[0], "message": parts[1]},
+            )
+
+    # SMS shortcut: "sms <number> <message>"
+    if lower.startswith("sms ") or lower.startswith("send sms "):
+        prefix = "send sms " if lower.startswith("send sms ") else "sms "
+        remainder = text[len(prefix):].strip()
+        parts = remainder.split(maxsplit=1)
+        if len(parts) >= 2:
+            return Intent(
+                raw_input=text,
+                action_type="call_tool",
+                tool_name="crossdevice_send_sms",
+                parameters={"phone_number": parts[0], "message": parts[1]},
+            )
+
+    # Spotify shortcut: "spotify <query>" or "play music <query>" or "play <query>"
+    for pfx in ["spotify ", "play music ", "play "]:
+        if lower.startswith(pfx):
+            remainder = text[len(pfx):].strip()
+            if remainder:
+                return Intent(
+                    raw_input=text,
+                    action_type="call_tool",
+                    tool_name="media_play_spotify",
+                    parameters={"query": remainder},
+                )
+
+    # Git Status shortcut: "git status"
+    if lower == "git status":
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="ide_git_status",
+            parameters={},
+        )
+
+    # Pytest / Test shortcut: "run tests", "pytest"
+    if lower in ("run tests", "pytest", "run test"):
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="ide_run_tests",
+            parameters={},
+        )
 
     # Run Skill: "run skill <name> <params>", "skill <name> <params>"
     skill_prefixes = ["run skill ", "skill "]

@@ -1,5 +1,23 @@
-"""Mitchell Workflow Studio Subsystem — Visual DAG Inspector & Live State Server."""
+"""Mitchell Studio — Absolute Command Center.
 
-from mitchell.studio.server import MitchellStudioServer, studio_state
+Complete unified surface providing chat, workspace, IDE, media, devices, 
+agents, memory, providers, and all other command panels.
+"""
 
-__all__ = ["MitchellStudioServer", "studio_state"]
+from mitchell.studio.server import (
+    MitchellStudioServer,
+    StudioStateProvider,
+    create_studio_app,
+    studio_app,
+    studio_state,
+    ws_manager,
+)
+
+__all__ = [
+    "MitchellStudioServer",
+    "StudioStateProvider",
+    "create_studio_app",
+    "studio_app",
+    "studio_state",
+    "ws_manager",
+]

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitchell Studio — Command Center</title>
+  <meta name="description" content="MitchellAI Studio — The absolute command center for your autonomous AI system." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/studio.css">
+</head>
+<body>
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- SIDEBAR NAVIGATION                                                -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-orb" id="sidebar-orb"></div>
+      <span class="brand-text">Mitchell</span>
+      <span class="brand-badge">STUDIO</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-panel="chat" title="Chat">
+        <i class="fa-solid fa-comments"></i>
+        <span>Chat</span>
+      </button>
+      <button class="nav-item" data-panel="agents" title="Agent Team">
+        <i class="fa-solid fa-diagram-project"></i>
+        <span>Agents</span>
+      </button>
+      <button class="nav-item" data-panel="memory" title="Memory">
+        <i class="fa-solid fa-brain"></i>
+        <span>Memory</span>
+      </button>
+      <button class="nav-item" data-panel="skills" title="Skills">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>Skills</span>
+      </button>
+
+      <div class="nav-divider"></div>
+
+      <button class="nav-item" data-panel="workspace" title="Workspace">
+        <i class="fa-solid fa-folder-tree"></i>
+        <span>Workspace</span>
+      </button>
+      <button class="nav-item" data-panel="ide" title="IDE">
+        <i class="fa-solid fa-code"></i>
+        <span>IDE</span>
+      </button>
+      <button class="nav-item" data-panel="research" title="Research">
+        <i class="fa-solid fa-magnifying-glass-chart"></i>
+        <span>Research</span>
+      </button>
+      <button class="nav-item" data-panel="messages" title="Messages">
+        <i class="fa-solid fa-envelope"></i>
+        <span>Messages</span>
+      </button>
+
+      <div class="nav-divider"></div>
+
+      <button class="nav-item" data-panel="media" title="Media">
+        <i class="fa-solid fa-music"></i>
+        <span>Media</span>
+      </button>
+      <button class="nav-item" data-panel="downloads" title="Downloads">
+        <i class="fa-solid fa-download"></i>
+        <span>Downloads</span>
+      </button>
+      <button class="nav-item" data-panel="devices" title="Devices">
+        <i class="fa-solid fa-mobile-screen-button"></i>
+        <span>Devices</span>
+      </button>
+      <button class="nav-item" data-panel="home" title="Smart Home">
+        <i class="fa-solid fa-house-signal"></i>
+        <span>Home</span>
+      </button>
+
+      <div class="nav-divider"></div>
+
+      <button class="nav-item" data-panel="automations" title="Automations">
+        <i class="fa-solid fa-gears"></i>
+        <span>Automations</span>
+      </button>
+      <button class="nav-item" data-panel="providers" title="Providers">
+        <i class="fa-solid fa-server"></i>
+        <span>Providers</span>
+      </button>
+      <button class="nav-item" data-panel="settings" title="Settings">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="cost-badge" id="cost-badge">
+        <i class="fa-solid fa-coins"></i>
+        <span id="cost-display">₹0.00</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MAIN CONTENT AREA                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <main id="main-content" class="main-content">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebar-toggle" class="topbar-btn" title="Toggle Sidebar">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" id="global-search" placeholder="Search everything..." autocomplete="off" />
+          <kbd>Ctrl+K</kbd>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-indicator" id="status-indicator">
+          <span class="status-dot idle"></span>
+          <span class="status-text">Idle</span>
+        </div>
+        <div class="provider-badge" id="provider-badge">
+          <i class="fa-solid fa-bolt"></i>
+          <span id="active-provider">Groq Free</span>
+        </div>
+        <button class="topbar-btn" id="diagnostics-btn" title="Diagnostics">
+          <i class="fa-solid fa-heart-pulse"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Panel Container -->
+    <div class="panel-container" id="panel-container">
+
+      <!-- ─── Chat Panel ────────────────────────────────────────────── -->
+      <div class="panel active" id="panel-chat">
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages">
+            <div class="message assistant">
+              <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+              <div class="message-content">
+                <div class="message-text">
+                  Welcome to <strong>Mitchell Studio</strong> — your absolute command center.
+                  I can manage your devices, research topics, control your smart home,
+                  write code, play music, and much more. What would you like to do?
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea id="chat-input" placeholder="Ask Mitchell anything..." rows="1" autocomplete="off"></textarea>
+              <button id="chat-send" class="send-btn" title="Send">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+              <button id="chat-voice" class="voice-btn" title="Voice Input">
+                <i class="fa-solid fa-microphone"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Agents Panel ──────────────────────────────────────────── -->
+      <div class="panel" id="panel-agents">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-diagram-project"></i> Agent Team & TaskGraph</h2>
+          <button class="refresh-btn" data-refresh="agents"><i class="fa-solid fa-rotate"></i></button>
+        </div>
+        <div class="panel-body" id="agents-content">
+          <div class="empty-state">
+            <i class="fa-solid fa-diagram-project"></i>
+            <p>No active agent tasks. Send a goal to see the task graph visualization.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Memory Panel ──────────────────────────────────────────── -->
+      <div class="panel" id="panel-memory">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-brain"></i> Memory Browser</h2>
+          <button class="refresh-btn" data-refresh="memory"><i class="fa-solid fa-rotate"></i></button>
+        </div>
+        <div class="panel-body" id="memory-content">
+          <div class="memory-tabs">
+            <button class="tab-btn active" data-tab="capabilities">Capabilities</button>
+            <button class="tab-btn" data-tab="user-model">User Model</button>
+            <button class="tab-btn" data-tab="semantic">Semantic Graph</button>
+            <button class="tab-btn" data-tab="procedural">Procedures</button>
+          </div>
+          <div class="tab-content" id="memory-tab-content">
+            <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Skills Panel ──────────────────────────────────────────── -->
+      <div class="panel" id="panel-skills">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Skills & Connectors</h2>
+          <button class="refresh-btn" data-refresh="skills"><i class="fa-solid fa-rotate"></i></button>
+        </div>
+        <div class="panel-body" id="skills-content">
+          <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+      </div>
+
+      <!-- ─── Workspace Panel ───────────────────────────────────────── -->
+      <div class="panel" id="panel-workspace">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-folder-tree"></i> Native Workspace</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="refresh-btn" data-refresh="workspace" title="Refresh"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="memory-tabs">
+            <button class="tab-btn active" data-wstab="overview">Overview</button>
+            <button class="tab-btn" data-wstab="documents">Documents</button>
+            <button class="tab-btn" data-wstab="spreadsheets">Spreadsheets</button>
+            <button class="tab-btn" data-wstab="notes">Notes</button>
+            <button class="tab-btn" data-wstab="projects">Projects</button>
+            <button class="tab-btn" data-wstab="files">All Files</button>
+          </div>
+          <div id="workspace-content">
+            <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading workspace...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── IDE Panel ─────────────────────────────────────────────── -->
+      <div class="panel" id="panel-ide">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-code"></i> Agentic IDE</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="refresh-btn" data-refresh="ide" title="Refresh"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+        <div class="panel-body" id="ide-content">
+          <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading IDE environment...</div>
+        </div>
+      </div>
+
+      <!-- ─── Research Panel ────────────────────────────────────────── -->
+      <div class="panel" id="panel-research">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-magnifying-glass-chart"></i> Autonomous Researcher</h2>
+        </div>
+        <div class="panel-body">
+          <div class="empty-state">
+            <i class="fa-solid fa-book-open-reader"></i>
+            <p>Deep multi-step research with parallel source gathering and citation.</p>
+            <p class="subtitle">Coming in Phase 4</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Messages Panel ────────────────────────────────────────── -->
+      <div class="panel" id="panel-messages">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-envelope"></i> Communication Hub</h2>
+        </div>
+        <div class="panel-body">
+          <div class="empty-state">
+            <i class="fa-solid fa-message"></i>
+            <p>Unified inbox — WhatsApp, SMS, email, and scheduled messages.</p>
+            <p class="subtitle">Coming in Phase 4</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Media Panel ───────────────────────────────────────────── -->
+      <div class="panel" id="panel-media">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-music"></i> Media & Entertainment</h2>
+        </div>
+        <div class="panel-body">
+          <div class="empty-state">
+            <i class="fa-solid fa-headphones"></i>
+            <p>Spotify control, media player, and entertainment recommendations.</p>
+            <p class="subtitle">Coming in Phase 5</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Downloads Panel ───────────────────────────────────────── -->
+      <div class="panel" id="panel-downloads">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-download"></i> Download Manager</h2>
+        </div>
+        <div class="panel-body">
+          <div class="empty-state">
+            <i class="fa-solid fa-cloud-arrow-down"></i>
+            <p>Advanced download manager — multi-connection, resume, queue, scheduling.</p>
+            <p class="subtitle">Coming in Phase 5</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Devices Panel ─────────────────────────────────────────── -->
+      <div class="panel" id="panel-devices">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-mobile-screen-button"></i> Cross-Device Control</h2>
+        </div>
+        <div class="panel-body">
+          <div class="empty-state">
+            <i class="fa-solid fa-laptop-mobile"></i>
+            <p>Windows + Android as one machine — transfer, sync, and continuity.</p>
+            <p class="subtitle">Coming in Phase 4</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Smart Home Panel ──────────────────────────────────────── -->
+      <div class="panel" id="panel-home">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-house-signal"></i> Smart Home & IoT</h2>
+        </div>
+        <div class="panel-body">
+          <div class="empty-state">
+            <i class="fa-solid fa-lightbulb"></i>
+            <p>Home Assistant integration — lights, climate, locks, cameras, and scenes.</p>
+            <p class="subtitle">Coming in Phase 5</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Automations Panel ─────────────────────────────────────── -->
+      <div class="panel" id="panel-automations">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-gears"></i> Automations Builder</h2>
+        </div>
+        <div class="panel-body">
+          <div class="empty-state">
+            <i class="fa-solid fa-robot"></i>
+            <p>Build automated workflows with triggers, conditions, and actions.</p>
+            <p class="subtitle">Coming in Phase 5</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Providers Panel ───────────────────────────────────────── -->
+      <div class="panel" id="panel-providers">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-server"></i> Provider & API Management</h2>
+          <button class="refresh-btn" data-refresh="providers"><i class="fa-solid fa-rotate"></i></button>
+        </div>
+        <div class="panel-body" id="providers-content">
+          <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+      </div>
+
+      <!-- ─── Settings Panel ────────────────────────────────────────── -->
+      <div class="panel" id="panel-settings">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-sliders"></i> Settings & Self-Extension</h2>
+        </div>
+        <div class="panel-body" id="settings-content">
+          <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <footer class="bottombar">
+      <div class="bottombar-left">
+        <span class="footer-item" id="ws-status">
+          <span class="ws-dot disconnected"></span> Disconnected
+        </span>
+        <span class="footer-item" id="active-tasks">0 active tasks</span>
+      </div>
+      <div class="bottombar-right">
+        <span class="footer-item" id="token-count">0 tokens</span>
+        <span class="footer-item" id="model-display">—</span>
+        <span class="footer-item version">Mitchell v2.0 Studio</span>
+      </div>
+    </footer>
+  </main>
+
+  <script src="/static/js/studio.js" type="module"></script>
+</body>
+</html>
