@@ -245,6 +245,81 @@ def test_cross_platform_guards() -> None:
         assert PYWINAUTO_AVAILABLE is False
 
 
+def test_self_evolution_engine() -> None:
+    """Verify code inspection, safety gating, dynamic tool synthesis, and registration."""
+    from mitchell.evolution import code_inspector, tool_synthesizer, evolution_engine
+    from mitchell.tools.registry import tool_registry
+
+    # 1. Codebase Introspection
+    summary = code_inspector.get_system_summary()
+    assert summary["total_source_files"] > 15
+    assert summary["total_registered_tools"] >= 4
+
+    # 2. Safety Invariant Check
+    is_safe, err = tool_synthesizer.check_safety_invariants("import os; os.system('rm -rf /')")
+    assert is_safe is False
+    assert "Safety invariant violation" in str(err)
+
+    # 3. Dynamic Tool Synthesis
+    synth_fn_code = "def custom_hash_calculator(text: str) -> str:\n    import hashlib\n    return hashlib.md5(text.encode()).hexdigest()\n"
+    res = tool_synthesizer.synthesize_tool(
+        name="custom_hash_calculator",
+        description="Calculates MD5 hash of input text.",
+        parameters={"type": "object", "properties": {"text": {"type": "string"}}},
+        function_code=synth_fn_code,
+    )
+    assert res["status"] == "success"
+
+    # Verify tool callable from ToolRegistry
+    calc_tool = tool_registry.get("custom_hash_calculator")
+    assert calc_tool is not None
+    hash_output = calc_tool.function("hello mitchell")
+    assert len(hash_output) == 32
+
+
+def test_daemon_queue_and_cron() -> None:
+    """Verify daemon persistent queue, priority ordering, and cron scheduler."""
+    import datetime
+    from mitchell.daemon import daemon_queue, cron_scheduler, daemon_sentinel
+
+    # 1. Priority Queue
+    t1 = daemon_queue.enqueue(goal="Low priority routine", priority=5)
+    t2 = daemon_queue.enqueue(goal="Critical emergency fix", priority=50)
+
+    # Higher priority must dequeue first
+    first_task = daemon_queue.dequeue()
+    assert first_task is not None
+    assert first_task["id"] == t2
+    daemon_queue.complete_task(task_id=first_task["id"], result={"done": True})
+
+    # 2. Cron Scheduler
+    now = datetime.datetime.now()
+    cron_expr = f"{now.minute} {now.hour} * * *"
+    cron_scheduler.add_job(job_id="test_minutely", cron_expr=cron_expr, goal="Check system load")
+    triggered = cron_scheduler.tick(now_dt=now)
+    assert "test_minutely" in triggered
+    cron_scheduler.remove_job("test_minutely")
+
+    # 3. Sentinel
+    health = daemon_sentinel.check_system_health()
+    assert health["status"] in ("healthy", "degraded")
+
+
+def test_local_llm_and_notifications() -> None:
+    """Verify local LLM offline fallback and multi-channel notifier."""
+    from mitchell.core.local_llm import local_llm
+    from mitchell.gateways import notifier
+
+    # Offline LLM fallback
+    resp = local_llm.generate("Hello Mitchell Offline")
+    assert "text" in resp
+
+    # Notifier
+    notif_res = notifier.notify_all("System Alert", "Mitchell Phase 10 tests running.")
+    assert "desktop" in notif_res
+
+
+
 
 
 

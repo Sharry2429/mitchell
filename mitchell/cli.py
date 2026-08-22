@@ -310,6 +310,59 @@ def launch_command(
         console.print("\n[dim]Shutting down services...[/dim]")
 
 
+@app.command(name="evolve", help="Trigger recursive self-evolution (inspect codebase, synthesize tools, run tests).")
+def evolve_command(
+    inspect: bool = typer.Option(False, "--inspect", "-i", help="Inspect local codebase and tool architecture"),
+    verify: bool = typer.Option(True, "--verify", "-v", help="Run full test suite verification"),
+) -> None:
+    """Trigger recursive self-evolution."""
+    from mitchell.evolution import code_inspector, evolution_engine
+
+    if inspect:
+        summary = code_inspector.get_system_summary()
+        console.print(Panel(
+            f"[bold cyan]Source Files:[/bold cyan] {summary['total_source_files']}\n"
+            f"[bold cyan]Test Files:[/bold cyan] {summary['total_test_files']}\n"
+            f"[bold cyan]Registered Tools:[/bold cyan] {summary['total_registered_tools']}\n"
+            f"[bold cyan]Packages:[/bold cyan] {', '.join(summary['packages'])}",
+            title="🧬 Mitchell Codebase Architecture",
+            border_style="green",
+        ))
+        return
+
+    console.print("[bold green]🧬 Running Mitchell Self-Evolution Verification Loop...[/bold green]")
+    test_res = evolution_engine.run_test_suite()
+    if test_res.get("success"):
+        console.print(Panel("[bold green]✓ System Invariants & Test Suite Fully Verified.[/bold green]", border_style="green"))
+    else:
+        console.print(Panel(f"[bold red]✗ Test Failures Detected:[/bold red]\n{test_res.get('stdout')}", border_style="red"))
+
+
+@app.command(name="butler", help="Launch 24/7 autonomous background queue worker.")
+def butler_command(
+    poll_interval: float = typer.Option(1.0, help="Polling interval in seconds"),
+) -> None:
+    """Start 24/7 background butler."""
+    from mitchell.daemon import butler
+
+    console.print("[bold green]🎩 Mitchell 24/7 Autonomous Butler Starting...[/bold green]")
+    console.print("[dim]Draining task queue and executing scheduled cron routines. Press Ctrl+C to stop.[/dim]")
+    butler.start_loop(poll_interval_s=poll_interval)
+
+
+@app.command(name="schedule", help="Schedule a recurring autonomous routine.")
+def schedule_command(
+    cron: str = typer.Argument(..., help="5-field cron expression (e.g. '0 8 * * *')"),
+    goal: str = typer.Argument(..., help="Autonomous goal description"),
+    name: str = typer.Option("job_custom", help="Unique identifier for schedule"),
+) -> None:
+    """Schedule recurring cron routine."""
+    from mitchell.daemon import cron_scheduler
+
+    job = cron_scheduler.add_job(job_id=name, cron_expr=cron, goal=goal)
+    console.print(f"[bold green]✓ Scheduled recurring job:[/bold green] [cyan]{job.job_id}[/cyan] ({cron}) -> '{goal}'")
+
+
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""
     if goal is None:

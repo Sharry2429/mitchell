@@ -40,8 +40,9 @@ class VoiceMode:
     def process_voice_input(self, user_text: str) -> str:
         """Process voice input through the Manager loop and return response text."""
         try:
-            from mitchell.manager.loop import manager
-            result = manager.run(user_text)
+            from mitchell.manager import Manager
+            mgr = Manager()
+            result = mgr.run(user_text)
             if isinstance(result, dict):
                 return str(result.get("response", result.get("result", str(result))))
             return str(result)
