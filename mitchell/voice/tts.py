@@ -16,7 +16,7 @@ from mitchell.core.logging import logger
 try:
     import pyttsx3
     HAS_PYTTSX3 = True
-except ImportError:
+except (ImportError, OSError, Exception):
     HAS_PYTTSX3 = False
 
 

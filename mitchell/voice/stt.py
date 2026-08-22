@@ -14,9 +14,9 @@ try:
     import sounddevice as sd
     import soundfile as sf
     HAS_AUDIO = True
-except ImportError:
+except (ImportError, OSError, Exception):
     HAS_AUDIO = False
-    logger.warning("Audio libraries (sounddevice/soundfile/numpy) not installed. Voice STT disabled.")
+    logger.warning("Audio libraries (sounddevice/soundfile/numpy) not installed or PortAudio missing. Voice STT disabled.")
 
 try:
     import requests
