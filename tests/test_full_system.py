@@ -2,6 +2,7 @@
 
 import asyncio
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 import pytest
 
 from mitchell.core import event_log, settings
@@ -317,6 +318,103 @@ def test_local_llm_and_notifications() -> None:
     # Notifier
     notif_res = notifier.notify_all("System Alert", "Mitchell Phase 10 tests running.")
     assert "desktop" in notif_res
+
+
+def test_universal_mcp_client() -> None:
+    """Verify external MCP client bridge, tool discovery, and tool execution."""
+    from mitchell.mcp_client import MCPClientHub
+    from mitchell.tools.registry import tool_registry
+
+    hub = MCPClientHub()
+    client = hub.register_client(
+        server_name="github_mock",
+        tools_dict={
+            "get_repo": {
+                "description": "Get repo details",
+                "parameters": {"type": "object", "properties": {"repo": {"type": "string"}}},
+                "handler": lambda repo: f"Mock repo details for {repo}",
+            }
+        },
+    )
+
+    assert client.is_connected is True
+    assert "get_repo" in client.list_remote_tools()
+
+    # Tool should be registered into Mitchell's ToolRegistry
+    bridged_tool = tool_registry.get("mcp_github_mock_get_repo")
+    assert bridged_tool is not None
+    exec_res = bridged_tool.function(repo="Sharry2429/mitchell")
+    assert exec_res["status"] == "success"
+    assert "Mock repo details" in exec_res["result"]
+
+
+def test_distributed_mesh_coordinator() -> None:
+    """Verify mesh node registration, capability matching, and remote dispatch."""
+    from mitchell.mesh import MeshCoordinator, MeshNode, MeshTaskRequest
+
+    coord = MeshCoordinator()
+    satellite = MeshNode(
+        node_id="linux_gpu_worker",
+        node_name="Ubuntu-RTX4090",
+        capabilities=["linux_cli", "gpu", "local_llm"],
+    )
+    coord.register_node(satellite)
+
+    nodes = coord.list_nodes()
+    assert len(nodes) >= 2
+
+    # Capability matching
+    matched_id = coord.find_node_for_capability("gpu")
+    assert matched_id == "linux_gpu_worker"
+
+    # Dispatch remote task
+    req = MeshTaskRequest(
+        target_node_id="linux_gpu_worker",
+        goal="echo remote mesh task",
+    )
+    res = coord.dispatch_task(req)
+    assert res.status == "success"
+    assert res.node_id == "linux_gpu_worker"
+
+
+def test_dynamic_plugin_loader(tmp_path: Any) -> None:
+    """Verify plugin manifest validation, dynamic module execution, and tool registration."""
+    import json
+    from mitchell.plugins import PluginLoader
+    from mitchell.tools.registry import tool_registry
+
+    plugin_dir = tmp_path / "sample_crypto_plugin"
+    plugin_dir.mkdir()
+
+    manifest_json = {
+        "name": "crypto_helper",
+        "version": "1.0.0",
+        "description": "Calculates SHA512 hashes",
+        "entry_point": "plugin.py",
+    }
+    (plugin_dir / "plugin.json").write_text(json.dumps(manifest_json), encoding="utf-8")
+
+    plugin_py = (
+        "from mitchell.tools.registry import Tool\n"
+        "import hashlib\n"
+        "def sha512_calc(text: str) -> str:\n"
+        "    return hashlib.sha512(text.encode()).hexdigest()\n"
+        "TOOLS = [\n"
+        "    Tool(name='calc_sha512', description='SHA512 calculator', parameters={'type':'object','properties':{'text':{'type':'string'}}}, function=sha512_calc)\n"
+        "]\n"
+    )
+    (plugin_dir / "plugin.py").write_text(plugin_py, encoding="utf-8")
+
+    loader = PluginLoader(plugins_dir=tmp_path)
+    loaded = loader.discover_and_load_all()
+    assert len(loaded) == 1
+    assert loaded[0].name == "crypto_helper"
+
+    # Tool should be registered
+    plugin_tool = tool_registry.get("calc_sha512")
+    assert plugin_tool is not None
+    assert len(plugin_tool.function("test")) == 128
+
 
 
 

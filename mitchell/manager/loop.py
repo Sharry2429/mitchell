@@ -92,6 +92,8 @@ class Manager:
         except Exception:
             return asyncio.run(self._async_receive(message))
 
+    run = receive
+
     async def _async_receive(self, message: str) -> str:
         """Asynchronous decision loop."""
         start_time = time.time()

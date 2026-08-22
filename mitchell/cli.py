@@ -363,6 +363,57 @@ def schedule_command(
     console.print(f"[bold green]✓ Scheduled recurring job:[/bold green] [cyan]{job.job_id}[/cyan] ({cron}) -> '{goal}'")
 
 
+@app.command(name="mesh", help="Manage distributed multi-node mesh cluster.")
+def mesh_command(
+    list_nodes: bool = typer.Option(True, "--list", "-l", help="List active mesh nodes"),
+) -> None:
+    """Manage distributed mesh cluster."""
+    from mitchell.mesh import mesh_coordinator
+
+    nodes = mesh_coordinator.list_nodes()
+    table = Table(title="🛰️ Mitchell Distributed Mesh Cluster", border_style="cyan")
+    table.add_column("Node ID", style="bold cyan")
+    table.add_column("Name", style="white")
+    table.add_column("Platform", style="green")
+    table.add_column("Capabilities", style="yellow")
+    table.add_column("Load", style="magenta")
+
+    for n in nodes:
+        table.add_row(
+            n["node_id"],
+            n["node_name"],
+            n["platform"],
+            ", ".join(n["capabilities"]),
+            f"{n['load_score']:.1f}",
+        )
+    console.print(table)
+
+
+@app.command(name="plugin", help="Discover and manage drop-in plugins.")
+def plugin_command(
+    discover: bool = typer.Option(True, "--discover", "-d", help="Discover and list installed plugins"),
+) -> None:
+    """Manage dynamic plugins."""
+    from mitchell.plugins import plugin_loader
+
+    plugin_loader.discover_and_load_all()
+    plugins = plugin_loader.list_plugins()
+
+    table = Table(title="🔌 Mitchell Active Plugins", border_style="green")
+    table.add_column("Name", style="bold green")
+    table.add_column("Version", style="cyan")
+    table.add_column("Description", style="white")
+    table.add_column("Author", style="dim")
+
+    for p in plugins:
+        table.add_row(p["name"], p["version"], p["description"], p.get("author") or "Community")
+
+    if not plugins:
+        console.print("[dim]No drop-in plugins found in .mitchell/plugins/ directory.[/dim]")
+    else:
+        console.print(table)
+
+
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""
     if goal is None:
