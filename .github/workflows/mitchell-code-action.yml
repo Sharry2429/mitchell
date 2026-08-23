@@ -1,0 +1,42 @@
+name: Mitchell Code Action CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Action mode (review, solve, commit)'
+        required: true
+        default: 'review'
+      prompt:
+        description: 'Task instructions'
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  mitchell-action:
+    if: github.actor != 'github-actions[bot]' && (!contains(github.event.comment.body, '[skip ci]'))
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Execute Mitchell Code Action
+        uses: ./
+        with:
+          groq_api_key: ${{ secrets.GROQ_API_KEY }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          mode: ${{ github.event.inputs.mode || 'auto' }}
+          prompt: ${{ github.event.inputs.prompt || github.event.issue.body || github.event.comment.body }}

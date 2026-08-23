@@ -94,7 +94,14 @@ flowchart TB
 - **Procedural `SKILL.md` Engine**: Parses YAML frontmatter and markdown procedural steps with variable substitution and error fallback policies.
 - **Autonomous AI Self-Extension**: Mitchell AI can autonomously install plugins, create procedural skills, and connect MCP servers via native tool calls (`plugin_install`, `skill_install`, `mcp_add_server`).
 
-### 5. SOTA 2026 Model Cascade & Free-Tier First
+### 5. Mitchell Code Action & Git Automation ([claude-code-action](https://github.com/anthropics/claude-code-action) Equivalent)
+- **Automated Pull Request Reviewer**: Deep AST validation, security vulnerability audit, diff analysis, and formatted markdown reviews.
+- **Issue-to-PR Resolver**: Autonomously reads issue prompts, creates isolated branches, implements fixes, runs `pytest`, and writes conventional commits.
+- **Smart Semantic Commit Engine**: Analyzes unstaged/staged git diffs and synthesizes atomic conventional commits (`feat: ...`, `fix: ...`, `refactor: ...`).
+- **Git Merge Conflict Resolver**: Scans and reconciles git conflict markers using AST validation.
+- **GitHub Actions CI/CD Integration**: Official `action.yml` and `.github/workflows/mitchell-code-action.yml` for automated CI triggers on PRs, issues, and `@mitchell` comments.
+
+### 6. SOTA 2026 Model Cascade & Free-Tier First
 - Live model switching across 8 LLM providers:
   - **Anthropic**: Claude 3.7 Sonnet (`claude-3-7-sonnet-20250219`, `claude-3-7-sonnet`), Claude 3.5 Sonnet, Claude 3.5 Haiku
   - **Groq (Free Tier)**: Llama 3.3 70B Versatile, Llama 3.1 8B Instant, Gemma 2 9B
@@ -127,6 +134,12 @@ Opens the Studio UI in your browser at `http://localhost:8500`.
 
 ### 3. CLI Commands & Fast Intents
 ```bash
+# Mitchell Code Action: Automated PR review & smart commits
+python -m mitchell.cli action review
+python -m mitchell.cli action commit
+python -m mitchell.cli action solve "Fix edge case in telemetry engine"
+python -m mitchell.cli action resolve-conflicts
+
 # Install an official Claude plugin
 python -m mitchell.cli plugin install github
 
@@ -167,9 +180,10 @@ Run the complete test suite:
 python -m pytest tests/ -v
 ```
 ```text
-============================= 52 passed in 31.04s =============================
+============================= 60 passed in 42.40s =============================
 ```
-100% of all 52 tests pass across:
+100% of all 60 tests pass across:
+- `tests/test_action_and_git.py` (8 tests)
 - `tests/test_full_system.py` (26 tests)
 - `tests/test_peak_capabilities.py` (12 tests)
 - `tests/test_plugins_and_mcp.py` (8 tests)

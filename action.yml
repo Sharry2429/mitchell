@@ -1,0 +1,49 @@
+name: 'Mitchell Code Action'
+description: 'Autonomous Git Assistant & CI Intelligence — Automated PR Reviews, Issue Solutions, AST Validation, and Smart Commits.'
+author: 'Sharry & Mitchell Team'
+branding:
+  icon: 'cpu'
+  color: 'purple'
+
+inputs:
+  anthropic_api_key:
+    description: 'Anthropic Claude API Key (optional if using free tier providers)'
+    required: false
+  groq_api_key:
+    description: 'Groq API Key (Free tier Llama 3.3 70B)'
+    required: false
+  openrouter_api_key:
+    description: 'OpenRouter API Key (Free tier Qwen 2.5 / DeepSeek)'
+    required: false
+  mode:
+    description: 'Action mode: review, solve, commit, auto'
+    required: false
+    default: 'auto'
+  prompt:
+    description: 'Specific instruction or prompt to execute'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Mitchell AI Framework
+      shell: bash
+      run: |
+        pip install -e .
+        pytest -q
+
+    - name: Run Mitchell Code Action
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
+        GROQ_API_KEY: ${{ inputs.groq_api_key }}
+        OPENROUTER_API_KEY: ${{ inputs.openrouter_api_key }}
+        MITCHELL_ACTION_MODE: ${{ inputs.mode }}
+        MITCHELL_PROMPT: ${{ inputs.prompt }}
+      run: |
+        python -m mitchell.cli action run

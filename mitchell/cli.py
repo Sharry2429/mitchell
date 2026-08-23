@@ -608,6 +608,78 @@ def mcp_command(
         console.print(Panel(json.dumps(res, indent=2), title=f"MCP Result: {server}:{target}", border_style="green"))
 
 
+@app.command(name="action", help="Mitchell Code Action — CI/CD, Automated PR Reviews, Issue Solving & Git Management.")
+def action_command(
+    subcommand: str = typer.Argument("review", help="Action: review, commit, solve, resolve-conflicts, init, run"),
+    target: Optional[str] = typer.Argument(None, help="Issue prompt, commit headline, or target directory"),
+    staged: bool = typer.Option(False, "--staged", "-s", help="Review staged changes only"),
+    push: bool = typer.Option(False, "--push", "-p", help="Auto-push commit to remote"),
+) -> None:
+    """Mitchell Code Action runner and Git automation engine."""
+    from mitchell.action import (
+        action_runner,
+        conflict_resolver,
+        issue_solver,
+        pr_reviewer,
+        smart_commit,
+        workflow_generator,
+    )
+
+    cmd = subcommand.lower()
+    if cmd in ("review", "diff"):
+        console.print("[bold cyan]Analyzing working tree diff & AST integrity...[/bold cyan]")
+        report = pr_reviewer.review_diff(staged_only=staged)
+        md = pr_reviewer.format_markdown_report(report)
+        console.print(Panel(md, title=f"Mitchell PR Review ({report.verdict})", border_style="cyan" if report.verdict == "APPROVE" else "yellow"))
+
+    elif cmd in ("commit", "smart-commit"):
+        console.print("[bold cyan]Synthesizing semantic conventional commit...[/bold cyan]")
+        res = smart_commit.create_commit(headline=target, auto_stage=True, auto_push=push)
+        if res.get("success"):
+            console.print(f"[bold green]✓ Successfully created commit:[/bold green] [bold]{res.get('commit_message')}[/bold]")
+            if res.get("pushed"):
+                console.print("[bold green]✓ Pushed to remote branch[/bold green]")
+        else:
+            console.print(f"[yellow]{res.get('message') or res.get('error')}[/yellow]")
+
+    elif cmd in ("solve", "issue"):
+        if not target:
+            console.print("[bold red]Error:[/bold red] Usage: [yellow]mitchell action solve \"<issue_description>\"[/yellow]")
+            return
+        console.print(f"[bold cyan]Autonomously solving issue:[/bold cyan] {target}")
+        res = issue_solver.solve_issue(issue_text=target, auto_commit=True)
+        if res.success:
+            console.print(f"[bold green]✓ Resolved issue on branch '{res.branch_name}'![/bold green]")
+            if res.commit_created:
+                console.print(f"  • Commit: [bold]{res.commit_message}[/bold]")
+        else:
+            console.print(f"[bold yellow]Issue execution finished with status: {res.summary}[/bold yellow]")
+
+    elif cmd in ("resolve-conflicts", "conflicts"):
+        console.print("[bold cyan]Scanning repository for git conflict markers...[/bold cyan]")
+        res = conflict_resolver.resolve_all_conflicts()
+        if res.get("status") == "clean":
+            console.print("[bold green]✓ No merge conflicts detected in repository![/bold green]")
+        else:
+            console.print(f"[bold green]✓ Resolved {res.get('total_files_resolved')} conflicted files![/bold green]")
+            for item in res.get("details", []):
+                console.print(f"  • {item['file']}: {item['conflicts_resolved']} conflict blocks reconciled")
+
+    elif cmd in ("init", "scaffold"):
+        console.print("[bold cyan]Scaffolding action.yml and GitHub Actions CI workflow...[/bold cyan]")
+        paths = workflow_generator.scaffold_all()
+        console.print(f"[bold green]✓ Generated Action definition: {paths['action_yml']}[/bold green]")
+        console.print(f"[bold green]✓ Generated CI Workflow: {paths['workflow_yml']}[/bold green]")
+
+    elif cmd == "run":
+        console.print("[bold cyan]Executing Mitchell Code Action from CI environment...[/bold cyan]")
+        res = action_runner.run_from_env()
+        console.print(f"[bold green]Action finished with status: {res.get('status')}[/bold green]")
+
+    else:
+        console.print(f"[bold red]Unknown action subcommand:[/bold red] '{subcommand}'. Use review, commit, solve, resolve-conflicts, init, run.")
+
+
 @app.command(name="benchmark", help="Execute multi-agent benchmarking evaluation arena.")
 def benchmark_command(
     domain: Optional[str] = typer.Option(None, "--domain", "-d", help="Filter by domain (browser, windows, android, reasoning, vision)"),

@@ -241,6 +241,29 @@ def parse_fast_intent(user_input: str) -> Optional[Intent]:
                 parameters={"server_name": parts[0], "command": parts[1]},
             )
 
+    # Git Action fast intents
+    if lower in ("review diff", "review pr", "code review", "pr review", "diff review"):
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="git_action_review",
+            parameters={},
+        )
+    if lower in ("smart commit", "auto commit", "create commit", "git commit"):
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="git_action_smart_commit",
+            parameters={},
+        )
+    if lower in ("resolve conflicts", "fix conflicts", "resolve merge conflicts"):
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="git_action_resolve_conflicts",
+            parameters={},
+        )
+
     # Memory Recall: "recall <category> <key>"
     if lower.startswith("recall "):
         remainder = text[7:].strip()
