@@ -139,11 +139,81 @@ class ModelRouter:
                     "Provider '{}' failed for model '{}': {}. Trying next in cascade...",
                     provider.name, resolved_model, e,
                 )
-                continue
+        # All providers failed — try full active fallback chain
+        try:
+            from mitchell.core.fallback_chains import fallback_engine
+            chain_res = await fallback_engine.execute(
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": prompt},
+                ],
+                mode="never_fails",
+                temperature=temperature,
+                max_tokens=max_tokens,
+                json_mode=json_mode,
+            )
+            rec = self.cost_tracker.record_usage(
+                model=chain_res.served_model,
+                prompt_tokens=chain_res.usage.get("prompt_tokens", len(prompt) // 4),
+                completion_tokens=chain_res.usage.get("completion_tokens", len(chain_res.content) // 4),
+                purpose=purpose,
+            )
+            return LLMResponse(
+                content=chain_res.content,
+                model=chain_res.served_model,
+                provider=chain_res.served_provider,
+                prompt_tokens=chain_res.usage.get("prompt_tokens", len(prompt) // 4),
+                completion_tokens=chain_res.usage.get("completion_tokens", len(chain_res.content) // 4),
+                total_tokens=rec.total_tokens,
+                cost_inr=rec.cost_inr,
+                cost_usd=rec.cost_usd,
+                latency_ms=chain_res.duration_ms,
+                is_mock=chain_res.served_provider == "offline_floor",
+                is_free_tier=True,
+            )
+        except Exception as e:
+            logger.warning("Fallback chain error: {}", e)
 
-        # All providers failed — heuristic fallback
+        # Ultimate fallback
         logger.warning("All providers exhausted, using heuristic fallback")
         return self._heuristic_fallback(prompt, sys_prompt, target_model, json_mode, purpose)
+
+    async def generate_chat_async(
+        self,
+        messages: List[Dict[str, str]],
+        tier: str = "fast",
+        temperature: float = 0.2,
+        max_tokens: Optional[int] = None,
+        json_mode: bool = False,
+    ) -> LLMResponse:
+        """High-velocity chat generation walking the full active fallback chain."""
+        from mitchell.core.fallback_chains import fallback_engine
+        result = await fallback_engine.execute(
+            messages=messages,
+            mode=tier,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            json_mode=json_mode,
+        )
+        rec = self.cost_tracker.record_usage(
+            model=result.served_model,
+            prompt_tokens=result.usage.get("prompt_tokens", 100),
+            completion_tokens=result.usage.get("completion_tokens", 50),
+            purpose=f"chain:{tier}",
+        )
+        return LLMResponse(
+            content=result.content,
+            model=result.served_model,
+            provider=result.served_provider,
+            prompt_tokens=result.usage.get("prompt_tokens", 100),
+            completion_tokens=result.usage.get("completion_tokens", 50),
+            total_tokens=rec.total_tokens,
+            cost_inr=rec.cost_inr,
+            cost_usd=rec.cost_usd,
+            latency_ms=result.duration_ms,
+            is_mock=result.served_provider == "offline_floor",
+            is_free_tier=True,
+        )
 
     async def generate_stream(
         self,
