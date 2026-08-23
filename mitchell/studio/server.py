@@ -156,12 +156,19 @@ async def api_chat(request: Request) -> JSONResponse:
         command_intent = {"action": "open_file", "path": ".env", "label": "Opening .env in editor..."}
 
     manager = get_manager()
+    model_name = body.get("model", "")
 
     # Broadcast thinking status
     await ws_manager.broadcast({"type": "status", "status": "thinking"})
 
     start = time.time()
-    response = manager.receive(message)
+    if model_name and model_name.startswith("local:"):
+        from mitchell.core.local_llm import multi_local_llm
+        loc_provider = model_name.split("local:")[-1]
+        local_res = await multi_local_llm.async_generate(prompt=message, provider_name=loc_provider)
+        response = local_res.get("text", "")
+    else:
+        response = manager.receive(message)
     duration = round(time.time() - start, 2)
 
     # Broadcast response
@@ -197,6 +204,52 @@ async def api_providers(request: Request) -> JSONResponse:
         elif action == "reset_health":
             provider_registry.reset_health(provider_name)
         return JSONResponse({"status": "ok", "providers": provider_registry.get_state()})
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_providers_local(request: Request) -> JSONResponse:
+    """Multi-Local LLM Provider discovery and management API."""
+    from mitchell.core.local_llm import multi_local_llm
+    if request.method == "GET":
+        providers = await multi_local_llm.discover_all_local_providers()
+        return JSONResponse({
+            "local_providers": providers,
+            "count": len(providers),
+            "online_count": len([p for p in providers if p.get("is_online")]),
+        })
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "add")
+        if action in ("add", "update"):
+            p = multi_local_llm.add_provider(
+                name=body.get("name", "custom_local"),
+                display_name=body.get("display_name"),
+                provider_type=body.get("provider_type", "openai_compatible"),
+                base_url=body.get("base_url", "http://localhost:11434"),
+                api_key=body.get("api_key"),
+                default_model=body.get("default_model", "llama3.2"),
+                enabled=body.get("enabled", True),
+            )
+            await multi_local_llm.ping_provider(p.name)
+            return JSONResponse({"status": "saved", "provider": p.model_dump(mode="json")})
+        elif action == "remove":
+            res = multi_local_llm.remove_provider(body.get("name", ""))
+            return JSONResponse({"status": "removed" if res else "not_found"})
+        elif action == "test":
+            pname = body.get("name", "ollama")
+            online = await multi_local_llm.ping_provider(pname)
+            p = multi_local_llm.get_provider(pname)
+            return JSONResponse({
+                "name": pname,
+                "is_online": online,
+                "provider": p.model_dump(mode="json") if p else None,
+            })
+        elif action == "generate":
+            pname = body.get("name")
+            prompt = body.get("prompt", "Hello Mitchell!")
+            res = await multi_local_llm.async_generate(prompt=prompt, provider_name=pname)
+            return JSONResponse(res)
+        return JSONResponse({"error": f"Unknown local provider action: {action}"}, status_code=400)
     return JSONResponse({"error": "Method not allowed"}, status_code=405)
 
 
@@ -956,6 +1009,7 @@ def create_studio_app() -> Starlette:
         Route("/api/state", endpoint=api_state),
         Route("/api/chat", endpoint=api_chat, methods=["POST"]),
         Route("/api/providers", endpoint=api_providers, methods=["GET", "POST"]),
+        Route("/api/providers/local", endpoint=api_providers_local, methods=["GET", "POST"]),
         Route("/api/memory", endpoint=api_memory),
         Route("/api/tools", endpoint=api_tools),
         Route("/api/skills", endpoint=api_skills, methods=["GET", "POST"]),
