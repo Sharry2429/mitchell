@@ -49,8 +49,16 @@ class PRReviewer:
             else:
                 cmd = ["git", "diff", base]
 
-            res = subprocess.run(cmd, cwd=str(self.root_dir), capture_output=True, text=True)
-            return res.stdout
+            res = subprocess.run(
+                cmd,
+                cwd=str(self.root_dir),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            return res.stdout or ""
+
         except Exception as e:
             logger.error("Failed to read git diff: {}", e)
             return ""
@@ -58,8 +66,10 @@ class PRReviewer:
     def review_diff(self, diff_text: Optional[str] = None, base: str = "HEAD", staged_only: bool = False) -> DiffReviewReport:
         """Analyze diff and generate a comprehensive review."""
         diff = diff_text if diff_text is not None else self.get_diff(base=base, staged_only=staged_only)
+        diff = diff or ""
 
         if not diff.strip():
+
             return DiffReviewReport(
                 target=base if not staged_only else "staged",
                 summary="Working tree is clean. No diff changes detected to review.",

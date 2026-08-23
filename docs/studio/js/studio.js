@@ -1,6 +1,6 @@
 /**
- * Mitchell Studio — Absolute OLED Command Center Controller
- * Powers Themes, VS Code / Cursor IDE, Living Orb, Memory Canvas, MCP Hub & Settings.
+ * Mitchell Studio — Pure Minimalist OLED Black Controller
+ * Focused · Functional · Clean · Zero Clutter
  */
 
 import { MitchellIDE } from './components/ide.js';
@@ -12,7 +12,6 @@ import { AgentsFloorStudio } from './components/agents_floor.js';
 // ── State Management ────────────────────────────────────────────────────────
 const state = {
   activePanel: 'chat',
-  activeTheme: 'oled',
   activeModel: 'grok-3',
   activeFile: 'mitchell/manager/loop.py',
   ws: null,
@@ -23,15 +22,15 @@ const state = {
   agentsComponent: null,
   memoryCanvasInitialized: false,
   mcpCatalog: [
-    { name: 'filesystem', desc: 'Read and write local files with fine-grained access control.', cmd: 'npx -y @modelcontextprotocol/server-filesystem D:/Mitchell', installed: true },
-    { name: 'brave-search', desc: 'Real-time web search and content extraction via Brave Search API.', cmd: 'npx -y @modelcontextprotocol/server-brave-search', installed: true },
-    { name: 'github', desc: 'Inspect pull requests, repositories, issues, and git commits.', cmd: 'npx -y @modelcontextprotocol/server-github', installed: true },
-    { name: 'postgres', desc: 'Query database tables, schemas, and execute analytical SQL.', cmd: 'npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mitchell', installed: false },
-    { name: 'whatsapp-mcp', desc: 'Baileys WhatsApp socket bridge for automated messaging & alerts.', cmd: 'python -m mitchell.mcp.whatsapp', installed: true },
-    { name: 'home-assistant', desc: 'Full entity control for lights, climate, locks and IoT scenes.', cmd: 'python -m mitchell.mcp.homeassistant', installed: true },
-    { name: 'puppeteer', desc: 'Stealth headless & headful web browser automation engine.', cmd: 'npx -y @modelcontextprotocol/server-puppeteer', installed: false },
-    { name: 'memory-graph', desc: 'Episodic and semantic knowledge graph triple store.', cmd: 'python -m mitchell.mcp.memory', installed: true },
-    { name: 'sqlite', desc: 'Embedded relational database for workspace data.', cmd: 'npx -y @modelcontextprotocol/server-sqlite ./data/workspace.db', installed: false }
+    { name: 'filesystem', desc: 'Read and write local files with access control.', installed: true },
+    { name: 'brave-search', desc: 'Real-time web search and content extraction.', installed: true },
+    { name: 'github', desc: 'Inspect pull requests, repos, issues, and git commits.', installed: true },
+    { name: 'whatsapp-mcp', desc: 'Baileys WhatsApp socket bridge for notifications.', installed: true },
+    { name: 'home-assistant', desc: 'Entity control for lights, climate, locks and IoT.', installed: true },
+    { name: 'memory-graph', desc: 'Episodic and semantic knowledge triple store.', installed: true },
+    { name: 'postgres', desc: 'Analytical SQL querying and database schemas.', installed: false },
+    { name: 'puppeteer', desc: 'Stealth headless browser automation engine.', installed: false },
+    { name: 'sqlite', desc: 'Embedded relational database for workspace data.', installed: false }
   ]
 };
 
@@ -51,11 +50,6 @@ export function switchPanel(panelId) {
   // Toggle activity bar buttons
   $$('.activity-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.panel === panelId);
-  });
-
-  // Toggle top view tabs
-  $$('.view-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.view === panelId);
   });
 
   // Update context-sensitive sidebar
@@ -93,12 +87,10 @@ export function switchPanel(panelId) {
     loadSkills();
   } else if (panelId === 'settings') {
     loadSettings();
-  } else if (panelId === 'workspace') {
-    loadWorkspace();
   }
 }
 
-// ── Dynamic Context-Sensitive Sidebar ───────────────────────────────────────
+// ── Context-Sensitive Sidebar ───────────────────────────────────────────────
 function updateSidebar(panelId) {
   const title = $('#sidebar-title');
   const body = $('#sidebar-body');
@@ -117,12 +109,6 @@ function updateSidebar(panelId) {
         <button class="nav-item active"><i class="fa-solid fa-brain"></i> Self-Model</button>
         <button class="nav-item"><i class="fa-solid fa-clock-rotate-left"></i> Episodic Log</button>
         <button class="nav-item"><i class="fa-solid fa-network-wired"></i> Semantic Triples</button>
-        <button class="nav-item"><i class="fa-solid fa-microchip"></i> Working Context</button>
-      </div>
-      <div class="nav-section">
-        <div class="nav-section-label">Actions</div>
-        <button class="nav-item" id="sidebar-clear-mem"><i class="fa-solid fa-trash-can"></i> Prune Stale</button>
-        <button class="nav-item" id="sidebar-export-mem"><i class="fa-solid fa-download"></i> Export Graph</button>
       </div>
     `;
   } else if (panelId === 'skills') {
@@ -133,7 +119,6 @@ function updateSidebar(panelId) {
         <div class="nav-section-label">Registries</div>
         <button class="nav-item active"><i class="fa-solid fa-server"></i> Active Servers <span class="badge">6</span></button>
         <button class="nav-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Procedural Skills</button>
-        <button class="nav-item"><i class="fa-solid fa-puzzle-piece"></i> Claude Plugins</button>
       </div>
     `;
   } else if (panelId === 'settings') {
@@ -144,8 +129,6 @@ function updateSidebar(panelId) {
         <div class="nav-section-label">Preferences</div>
         <button class="nav-item active"><i class="fa-solid fa-key"></i> Model API Keys</button>
         <button class="nav-item"><i class="fa-solid fa-sliders"></i> Engine Rules</button>
-        <button class="nav-item"><i class="fa-solid fa-shield-halved"></i> Security & Gates</button>
-        <button class="nav-item"><i class="fa-solid fa-chart-line"></i> Telemetry & Cost</button>
       </div>
     `;
   } else {
@@ -157,14 +140,12 @@ function updateSidebar(panelId) {
         <button class="nav-item ${panelId==='chat'?'active':''}" data-nav="chat"><i class="fa-solid fa-message"></i> Chat Studio</button>
         <button class="nav-item ${panelId==='ide'?'active':''}" data-nav="ide"><i class="fa-solid fa-code"></i> MitchellIDE</button>
         <button class="nav-item ${panelId==='agents'?'active':''}" data-nav="agents"><i class="fa-solid fa-diagram-project"></i> Agent Floor <span class="badge">12</span></button>
-        <button class="nav-item ${panelId==='orb'?'active':''}" data-nav="orb"><i class="fa-solid fa-circle-nodes"></i> Living Orb</button>
         <button class="nav-item ${panelId==='research'?'active':''}" data-nav="research"><i class="fa-solid fa-magnifying-glass-chart"></i> Deep Research</button>
-        <button class="nav-item ${panelId==='documents'?'active':''}" data-nav="documents"><i class="fa-solid fa-file-lines"></i> Document Studio</button>
+        <button class="nav-item ${panelId==='documents'?'active':''}" data-nav="documents"><i class="fa-solid fa-file-lines"></i> Documents</button>
         <button class="nav-item ${panelId==='home'?'active':''}" data-nav="home"><i class="fa-solid fa-house-signal"></i> Smart Home</button>
       </div>
       <div class="nav-section">
         <div class="nav-section-label">System</div>
-        <button class="nav-item" data-nav="workspace"><i class="fa-solid fa-folder-tree"></i> Workspace</button>
         <button class="nav-item" data-nav="memory"><i class="fa-solid fa-brain"></i> Memory Graph</button>
         <button class="nav-item" data-nav="skills"><i class="fa-solid fa-wand-magic-sparkles"></i> MCP Hub</button>
         <button class="nav-item" data-nav="settings"><i class="fa-solid fa-gear"></i> Settings</button>
@@ -187,7 +168,6 @@ function renderFileTreeSidebar(container) {
           <div class="file-tree">
             <div class="tree-file active"><i class="fa-brands fa-python" style="color:#4ade80"></i> loop.py</div>
             <div class="tree-file"><i class="fa-brands fa-python" style="color:#4ade80"></i> server.py</div>
-            <div class="tree-file"><i class="fa-solid fa-file-code" style="color:var(--accent-cyan)"></i> studio.css</div>
           </div>
         </div>
         <div class="nav-section">
@@ -202,20 +182,13 @@ function renderFileTreeSidebar(container) {
     .catch(() => {
       container.innerHTML = `
         <div class="nav-section">
-          <div class="nav-section-label">Mitchell Repository</div>
+          <div class="nav-section-label">Workspace</div>
           <div class="file-tree">
             <div class="tree-folder"><i class="fa-solid fa-folder"></i> mitchell</div>
             <div class="tree-children">
-              <div class="tree-folder"><i class="fa-solid fa-folder"></i> mcp</div>
-              <div class="tree-file active"><i class="fa-brands fa-python" style="color:#4ade80"></i> server.py</div>
-              <div class="tree-folder"><i class="fa-solid fa-folder"></i> manager</div>
-              <div class="tree-file"><i class="fa-brands fa-python" style="color:#4ade80"></i> loop.py</div>
+              <div class="tree-file active"><i class="fa-brands fa-python" style="color:#4ade80"></i> loop.py</div>
+              <div class="tree-file"><i class="fa-brands fa-python" style="color:#4ade80"></i> server.py</div>
             </div>
-            <div class="tree-folder"><i class="fa-solid fa-folder"></i> docs</div>
-            <div class="tree-children">
-              <div class="tree-file"><i class="fa-solid fa-file-code" style="color:var(--accent-cyan)"></i> studio.css</div>
-            </div>
-            <div class="tree-file"><i class="fa-brands fa-python" style="color:#fbbf24"></i> pyproject.toml</div>
           </div>
         </div>
       `;
@@ -303,13 +276,13 @@ function initMemoryCanvas() {
   const ctx = canvas.getContext('2d');
 
   const nodes = [
-    { x: 300, y: 210, r: 24, label: 'Mitchell Core', color: '#00e5ff', vx: 0, vy: 0 },
-    { x: 180, y: 120, r: 16, label: 'Self-Model', color: '#00ff88', vx: 0.2, vy: -0.1 },
-    { x: 420, y: 130, r: 16, label: 'Episodic', color: '#a78bfa', vx: -0.15, vy: 0.2 },
-    { x: 200, y: 310, r: 18, label: 'MCP Tools', color: '#fbbf24', vx: 0.1, vy: 0.15 },
-    { x: 400, y: 300, r: 15, label: 'Semantic Triples', color: '#60a5fa', vx: -0.2, vy: -0.1 },
-    { x: 110, y: 220, r: 14, label: 'Real CDP', color: '#34d399', vx: 0.1, vy: -0.15 },
-    { x: 490, y: 210, r: 14, label: 'Home Assistant', color: '#f87171', vx: -0.1, vy: 0.1 }
+    { x: 300, y: 210, r: 22, label: 'Mitchell Core', color: '#00e5ff', vx: 0, vy: 0 },
+    { x: 180, y: 120, r: 15, label: 'Self-Model', color: '#00ff88', vx: 0.2, vy: -0.1 },
+    { x: 420, y: 130, r: 15, label: 'Episodic', color: '#a78bfa', vx: -0.15, vy: 0.2 },
+    { x: 200, y: 310, r: 16, label: 'MCP Tools', color: '#fbbf24', vx: 0.1, vy: 0.15 },
+    { x: 400, y: 300, r: 14, label: 'Semantic Triples', color: '#60a5fa', vx: -0.2, vy: -0.1 },
+    { x: 110, y: 220, r: 13, label: 'Real CDP', color: '#34d399', vx: 0.1, vy: -0.15 },
+    { x: 490, y: 210, r: 13, label: 'Home Assistant', color: '#f87171', vx: -0.1, vy: 0.1 }
   ];
 
   const links = [
@@ -319,7 +292,6 @@ function initMemoryCanvas() {
   function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Links
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 1.5;
     for (const [i, j] of links) {
@@ -329,33 +301,24 @@ function initMemoryCanvas() {
       ctx.stroke();
     }
 
-    // Draw Nodes
     for (const n of nodes) {
       n.x += n.vx;
       n.y += n.vy;
       if (n.x < n.r || n.x > canvas.width - n.r) n.vx *= -1;
       if (n.y < n.r || n.y > canvas.height - n.r) n.vy *= -1;
 
-      // Glow
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2);
-      ctx.fillStyle = n.color.replace(')', ', 0.12)').replace('rgb', 'rgba');
-      ctx.fill();
-
-      // Core
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
       ctx.fillStyle = '#101014';
       ctx.strokeStyle = n.color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.fill();
       ctx.stroke();
 
-      // Label
       ctx.fillStyle = '#f4f4f6';
       ctx.font = '10px Inter';
       ctx.textAlign = 'center';
-      ctx.fillText(n.label, n.x, n.y + n.r + 14);
+      ctx.fillText(n.label, n.x, n.y + n.r + 12);
     }
 
     if (state.activePanel === 'memory') {
@@ -374,7 +337,7 @@ function renderMCPCatalog() {
 
   container.innerHTML = state.mcpCatalog.map(m => `
     <div class="mcp-card">
-      <div class="mcp-card-h">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
         <span class="mcp-name">${m.name}</span>
         <span class="badge" style="background:${m.installed?'rgba(0,255,136,0.15)':'rgba(255,255,255,0.06)'};color:${m.installed?'var(--accent-mint)':'var(--text-muted)'}">
           ${m.installed ? 'Installed' : 'Available'}
@@ -382,7 +345,7 @@ function renderMCPCatalog() {
       </div>
       <div class="mcp-desc">${m.desc}</div>
       <button class="mcp-install-btn ${m.installed ? 'installed' : ''}" data-mcp="${m.name}">
-        <i class="fa-solid ${m.installed ? 'fa-check' : 'fa-download'}"></i> ${m.installed ? 'Configured' : 'Install Server'}
+        <i class="fa-solid ${m.installed ? 'fa-check' : 'fa-download'}"></i> ${m.installed ? 'Configured' : 'Install'}
       </button>
     </div>
   `).join('');
@@ -394,7 +357,7 @@ function renderMCPCatalog() {
       if (target) {
         target.installed = true;
         renderMCPCatalog();
-        addChatMessage('assistant', `<strong>MCP Server Installed:</strong> <code>${name}</code> is now online and available across Mitchell AI tools.`);
+        addChatMessage('assistant', `<strong>MCP Server Installed:</strong> <code>${name}</code> is ready.`);
       }
     });
   });
@@ -408,9 +371,9 @@ function loadSkills() {
     .then(data => {
       const skills = data.skills || [];
       listEl.innerHTML = skills.map(s => `
-        <div style="padding:10px 14px;background:var(--bg-surface);border:1px solid var(--glass-border);border-radius:var(--radius-md);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="padding:8px 12px;background:var(--bg-deep);border:1px solid var(--glass-border);border-radius:var(--radius-xs);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div style="font-weight:600;font-size:13px;">${s.name}</div>
+            <div style="font-weight:600;font-size:12.5px;">${s.name}</div>
             <div style="font-size:11px;color:var(--text-secondary);">${s.description}</div>
           </div>
           <span class="badge" style="background:rgba(167,139,250,0.15);color:var(--accent-violet)">SKILL.md</span>
@@ -432,7 +395,6 @@ function loadSettings() {
       if (cfg.gemini) $('#dot-gemini')?.classList.add('configured');
       if (cfg.groq) $('#dot-groq')?.classList.add('configured');
       if (cfg.deepseek) $('#dot-deepseek')?.classList.add('configured');
-      if (cfg.openrouter) $('#dot-openrouter')?.classList.add('configured');
       if (cfg.homeassistant) $('#dot-ha')?.classList.add('configured');
       if (data.homeassistant_url) $('#key-ha-url').value = data.homeassistant_url;
     })
@@ -447,7 +409,6 @@ function saveSettings() {
     gemini_api_key: $('#key-gemini')?.value,
     groq_api_key: $('#key-groq')?.value,
     deepseek_api_key: $('#key-deepseek')?.value,
-    openrouter_api_key: $('#key-openrouter')?.value,
     homeassistant_url: $('#key-ha-url')?.value,
     homeassistant_token: $('#key-ha-token')?.value,
   };
@@ -461,7 +422,7 @@ function saveSettings() {
     .then(data => {
       const msg = $('#keys-status-msg');
       if (msg) {
-        msg.textContent = `✓ Keys successfully persisted to .env (${data.updated?.length || 0} updated)`;
+        msg.textContent = `✓ Keys saved to .env (${data.updated?.length || 0} updated)`;
         setTimeout(() => msg.textContent = '', 4000);
       }
       loadSettings();
@@ -492,7 +453,6 @@ function sendChat() {
   addChatMessage('user', text);
   input.value = '';
 
-  // Broadcast or send to API
   fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -504,7 +464,7 @@ function sendChat() {
       if (data.cost) updateCost(data.cost);
     })
     .catch(() => {
-      addChatMessage('assistant', `Acknowledged: "${text}". Dispatching to autonomous decision loop.`);
+      addChatMessage('assistant', `Acknowledged: "${text}". Dispatching to autonomous loop.`);
     });
 }
 
@@ -546,34 +506,11 @@ function connectWebSocket() {
 
 // ── DOM Ready Initialization ────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Theme Chips
-  $$('.theme-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      $$('.theme-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      const theme = chip.dataset.theme;
-      document.documentElement.setAttribute('data-theme', theme);
-      state.activeTheme = theme;
-    });
-  });
-
-  // Top View Tabs
-  $$('.view-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      switchPanel(tab.dataset.view);
-    });
-  });
-
   // Activity Bar
   $$('.activity-btn[data-panel]').forEach(btn => {
     btn.addEventListener('click', () => {
       switchPanel(btn.dataset.panel);
     });
-  });
-
-  // Mini Orb Button
-  $('#mini-orb-trigger')?.addEventListener('click', () => {
-    switchPanel('orb');
   });
 
   // Quick Chips in Chat
@@ -586,8 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#sidebar')?.classList.toggle('collapsed');
   });
 
-  // Model Cascade Selector
-  const modelSelect = $('#global-model-selector');
+  // Model Selector
   const modelPill = $('#model-selector-pill');
   modelPill?.addEventListener('click', () => {
     const models = ['Grok 3 · xAI', 'Claude 3.7 Sonnet', 'GPT-4o (OpenAI)', 'Gemini 2.0 Flash', 'DeepSeek-R1', 'Local Llama 3'];
@@ -605,16 +541,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Orb State Switcher
-  $$('.orb-state-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.orb-state-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const orb = $('#main-orb');
-      if (orb) orb.className = `orb ${btn.dataset.state}`;
-    });
-  });
-
   // Deep Research Execute
   $('#research-run-btn')?.addEventListener('click', () => {
     const query = $('#research-query-input')?.value.trim();
@@ -630,17 +556,17 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(r => r.json())
       .then(res => {
         container.innerHTML = `
-          <div style="background:var(--bg-surface);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:18px;">
-            <div style="font-weight:700;font-size:16px;margin-bottom:10px;">${res.query}</div>
+          <div style="background:var(--bg-surface);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:14px;">
+            <div style="font-weight:700;font-size:15px;margin-bottom:8px;">${res.query}</div>
             <div class="sources-grid">
               ${res.sources.map(s => `
                 <div class="source-card">
-                  <div class="source-card-domain"><i class="fa-solid fa-shield-check"></i> ${s.title}</div>
-                  <div style="font-size:11px;color:var(--text-muted);">${s.url}</div>
+                  <div style="font-weight:600;color:var(--accent-cyan);margin-bottom:2px;"><i class="fa-solid fa-shield-check"></i> ${s.title}</div>
+                  <div style="font-size:10.5px;color:var(--text-muted);">${s.url}</div>
                 </div>
               `).join('')}
             </div>
-            <div style="margin-top:14px;line-height:1.7;color:var(--text-primary);font-size:13.5px;">
+            <div style="margin-top:10px;line-height:1.6;color:var(--text-primary);font-size:12.5px;">
               ${res.detailed_report.replace(/\[(\d+)\]/g, '<span class="citation-badge">[$1]</span>')}
             </div>
           </div>
@@ -651,9 +577,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Settings Save
   $('#save-keys-btn')?.addEventListener('click', saveSettings);
-  $('#test-keys-btn')?.addEventListener('click', () => {
-    alert('Connection Test: All configured providers responded with 200 OK.');
-  });
 
   // Terminal Runner in IDE
   $('#terminal-cli-input')?.addEventListener('keydown', e => {
@@ -682,10 +605,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Composer AI Actions
   $('#composer-apply-btn')?.addEventListener('click', () => {
-    alert('Surgical Diff applied successfully to mitchell/manager/loop.py.');
+    alert('Surgical Diff applied to loop.py.');
   });
 
-  // Command Palette (Ctrl+K / ⌘K)
+  // Command Palette (Ctrl+K)
   const overlay = $('#cmd-overlay');
   function openCmd() {
     overlay?.classList.add('open');
@@ -711,18 +634,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (act) switchPanel(act);
     });
   });
-
-  // Editor Context Menu
-  const ctxMenu = $('#ctx-menu');
-  $('#ide-editor-container')?.addEventListener('contextmenu', e => {
-    e.preventDefault();
-    if (ctxMenu) {
-      ctxMenu.style.left = `${e.clientX}px`;
-      ctxMenu.style.top = `${e.clientY}px`;
-      ctxMenu.classList.add('open');
-    }
-  });
-  document.addEventListener('click', () => ctxMenu?.classList.remove('open'));
 
   // Initial Panel Setup
   switchPanel('chat');
