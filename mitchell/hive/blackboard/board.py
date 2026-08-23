@@ -110,12 +110,13 @@ class SharedBlackboard:
         """Export full snapshot of active topics, entries, and claims."""
         return {
             "topics": {
-                t: [e.model_dump() for e in entries[-10:]]
+                t: [e.model_dump(mode="json") for e in entries[-10:]]
                 for t, entries in self._topics.items()
             },
             "claims": dict(self._claims),
             "total_topics": len(self._topics),
         }
+
 
 
 blackboard = SharedBlackboard()

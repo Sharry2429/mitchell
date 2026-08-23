@@ -89,16 +89,18 @@ class StudioStateProvider:
 
     def get_full_state(self) -> Dict[str, Any]:
         """Aggregate current snapshot of the Mitchell hive state."""
-        return {
+        state = {
             "blackboard": blackboard.dump_state(),
             "cost": cost_tracker.get_summary(),
             "recent_events": [e.model_dump(mode="json") for e in event_log.get_recent(n=25)],
             "providers": provider_registry.get_state(),
             "diagnostics": recovery_engine.run_diagnostics().model_dump(mode="json"),
         }
+        return json.loads(json.dumps(state, default=str))
 
 
 studio_state = StudioStateProvider()
+
 
 
 # ── API Route Handlers ────────────────────────────────────────────────────

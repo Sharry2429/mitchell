@@ -1,11 +1,11 @@
-"""Model Context Protocol (MCP) server entry point (aliased to mitchell.mcp package)."""
+"""Entry point for running Mitchell MCP Server via `python -m mitchell.mcp`."""
 
 import asyncio
-from mitchell.mcp.server import MitchellMCPServer, mcp_server
+from mitchell.mcp.server import MitchellMCPServer
 
 
 def main() -> None:
-    """Entry point for mitchell-mcp console script."""
+    """Run Mitchell MCP server on stdio."""
     server = MitchellMCPServer()
     try:
         asyncio.run(server.run_stdio())

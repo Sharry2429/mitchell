@@ -759,6 +759,18 @@ def avatar_command(
     server.start()
 
 
+@app.command(name="mcp", help="Run Mitchell Model Context Protocol (MCP) server on stdio.")
+def mcp_command() -> None:
+    """Launch the MCP Server via stdio for external AI IDEs and Claude Code."""
+    from mitchell.mcp.server import MitchellMCPServer
+    import asyncio
+    server = MitchellMCPServer()
+    try:
+        asyncio.run(server.run_stdio())
+    except (KeyboardInterrupt, EOFError):
+        pass
+
+
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""
     if goal is None:
@@ -772,3 +784,4 @@ def do(goal: Optional[str] = None) -> None:
 
 if __name__ == "__main__":
     app()
+

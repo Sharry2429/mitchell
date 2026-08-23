@@ -317,27 +317,27 @@ class Manager:
         if not tool_name:
             return "Error: No tool name specified."
 
-        tool = self.tool_registry.get(tool_name)
-        if not tool:
-            return f"Error: Tool '{tool_name}' not found in registry."
+        from mitchell.mcp.tools_adapter import mcp_tool_adapter
 
-        try:
-            logger.info("Manager invoking tool '{}' with parameters: {}", tool_name, parameters)
-            result = self._invoke_tool_function(tool, parameters)
-            self.event_log.log_event(
-                "tool_executed",
-                source="manager",
-                data={"tool": tool_name, "parameters": parameters, "result": str(result)},
-            )
-            return f"[Tool: {tool_name}] Result: {result}"
-        except Exception as exc:
-            logger.error("Error executing tool '{}': {}", tool_name, exc)
+        logger.info("Manager invoking tool '{}' via MCP with parameters: {}", tool_name, parameters)
+        res = mcp_tool_adapter.execute_tool(name=tool_name, arguments=parameters)
+        if res.isError:
+            err_text = res.content[0].text if res.content else "Tool execution error"
             self.event_log.log_event(
                 "tool_error",
-                source="manager",
-                data={"tool": tool_name, "error": str(exc)},
+                source="manager_mcp",
+                data={"tool": tool_name, "error": err_text},
             )
-            return f"[Tool: {tool_name}] Execution error: {exc}"
+            return f"[Tool: {tool_name}] Execution error: {err_text}"
+
+        out_text = res.content[0].text if res.content else ""
+        self.event_log.log_event(
+            "tool_executed",
+            source="manager_mcp",
+            data={"tool": tool_name, "parameters": parameters, "result": out_text},
+        )
+        return f"[Tool: {tool_name}] Result: {out_text}"
+
 
     def _invoke_tool_function(self, tool: Tool, parameters: Dict[str, Any]) -> Any:
         """Invoke tool callable by binding parameters to function signature."""
