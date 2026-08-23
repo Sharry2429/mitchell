@@ -4,7 +4,74 @@ import asyncio
 import sys
 from typing import Optional
 
-import typer
+try:
+    import typer
+except ImportError:
+    from typing import Any as _Any
+
+    class _TyperShim:
+        Context = _Any
+
+        def __init__(self, *args, **kwargs):
+            self.commands = {}
+            self.callback_fn = None
+
+        def callback(self, *args, **kwargs):
+            def decorator(f):
+                self.callback_fn = f
+                return f
+            return decorator
+
+        def command(self, name=None, *args, **kwargs):
+            def decorator(f):
+                cmd_name = name or f.__name__.replace("_command", "")
+                self.commands[cmd_name] = f
+                return f
+            return decorator
+
+        @classmethod
+        def Option(cls, default=None, *args, **kwargs):
+            return default
+
+        @classmethod
+        def Argument(cls, default=None, *args, **kwargs):
+            return default
+
+        class Exit(Exception):
+            def __init__(self, code=0):
+                self.code = code
+
+        def __call__(self):
+            args = sys.argv[1:]
+            if not args:
+                interactive()
+                return
+            if args[0] in ("-v", "--version", "version"):
+                show_version()
+                return
+            if args[0] in ("-h", "--help", "help"):
+                console.print("[bold cyan]Mitchell[/bold cyan] - Autonomous Multi-Agent Hive & Task Orchestration Framework")
+                console.print("Commands: [yellow]" + ", ".join(self.commands.keys()) + "[/yellow]")
+                return
+            cmd = args[0]
+            if cmd in self.commands:
+                fn = self.commands[cmd]
+                import inspect
+                sig = inspect.signature(fn)
+                if len(sig.parameters) == 0:
+                    return fn()
+                elif len(args) > 1:
+                    return fn(" ".join(args[1:]))
+                else:
+                    return fn()
+            else:
+                execute_goal(" ".join(args))
+
+        @classmethod
+        def Typer(cls, *args, **kwargs):
+            return cls(*args, **kwargs)
+
+    typer = _TyperShim
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -208,7 +275,7 @@ def health_command() -> None:
     table.add_column("Component", style="cyan")
     table.add_column("Status / Details", style="white")
     table.add_row("Overall Health", f"[bold green]{report['status'].upper()}[/bold green]")
-    table.add_row("Database Connected", "✓ Yes" if report["database_connected"] else "✗ No")
+    table.add_row("Database Connected", "[green]YES[/green]" if report["database_connected"] else "[red]NO[/red]")
     table.add_row("Registered Hive Agents", ", ".join(report["agents"]))
     table.add_row("Active Resource Locks", str(len(report["active_locks"])))
     console.print(table)
