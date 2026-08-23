@@ -139,10 +139,10 @@ async def api_chat(request: Request) -> JSONResponse:
     elif "open researcher" in msg_lower or msg_lower.startswith("deep research ") or msg_lower.startswith("research "):
         query = message.replace("open researcher", "").replace("deep research", "").replace("research", "").strip(": ")
         command_intent = {"action": "open_researcher", "query": query, "label": "Summoning Deep Researcher..."}
-    elif "show resources" in msg_lower or "system resources" in msg_lower or "resource watch" in msg_lower:
-        command_intent = {"action": "show_resources", "label": "Displaying Resource Watch HUD..."}
-    elif "show devices" in msg_lower or "open devices" in msg_lower:
-        command_intent = {"action": "show_devices", "label": "Opening Devices Console..."}
+    elif "pair android" in msg_lower or "wireless debugging" in msg_lower or "wireless adb" in msg_lower or "connect phone" in msg_lower:
+        command_intent = {"action": "pair_android", "label": "Establishing Wireless ADB Debugging over LAN..."}
+    elif "show devices" in msg_lower or "open devices" in msg_lower or "sync device" in msg_lower:
+        command_intent = {"action": "show_devices", "label": "Opening Devices Console & Syncing..."}
     elif "install @" in msg_lower or "install mcp" in msg_lower:
         pkg = message.split("install")[-1].strip()
         command_intent = {"action": "install_mcp", "package": pkg, "label": f"Installing MCP {pkg}..."}
@@ -873,26 +873,91 @@ async def api_projects(request: Request) -> JSONResponse:
 
 
 async def api_devices(request: Request) -> JSONResponse:
-    """Aggregated Devices status API."""
-    devices = [
-        {
-            "id": "win-desktop",
-            "name": "Host Workstation",
-            "type": "desktop",
-            "os": f"{platform.system()} {platform.release()}",
-            "status": "connected",
-            "icon": "desktop",
-            "details": "Win32 & UIA Direct Grounding Active"
-        }
-    ]
-    try:
-        from mitchell.crossdevice.pairing import pairing_manager
-        paired = pairing_manager.list_devices()
-        for d in paired:
-            devices.append(d.model_dump(mode="json"))
-    except Exception:
-        pass
-    return JSONResponse({"devices": devices})
+    """Aggregated Devices status & Wireless ADB Pairing API."""
+    from mitchell.android.adb import adb_client
+    from mitchell.android.registry import device_registry
+
+    if request.method == "GET":
+        devices = [
+            {
+                "id": "win-desktop",
+                "name": "Host Workstation",
+                "type": "desktop",
+                "os": f"{platform.system()} {platform.release()}",
+                "status": "connected",
+                "icon": "desktop",
+                "details": "Win32 & UIA Direct Grounding Active",
+            }
+        ]
+
+        # 1. Query live ADB connected devices
+        try:
+            connected_adb = adb_client.detect_connected_devices()
+            for cad in connected_adb:
+                serial = cad.get("serial", "")
+                is_wireless = cad.get("is_wireless", False)
+                model = cad.get("model", "Android")
+                state = cad.get("state", "device")
+                ip = serial.split(":")[0] if is_wireless else adb_client.extract_device_ip(serial)
+
+                devices.append({
+                    "id": serial,
+                    "name": f"{model} ({'Wireless' if is_wireless else 'USB'})",
+                    "type": "android",
+                    "os": "Android OS (ADB)",
+                    "status": "online" if state == "device" else state,
+                    "icon": "mobile-screen-button",
+                    "serial": serial,
+                    "is_wireless": is_wireless,
+                    "ip_address": ip or "Local USB",
+                    "details": f"Wireless ADB on {serial}" if is_wireless else "Connected via USB (Ready for Wireless Pairing)",
+                })
+        except Exception as e:
+            logger.debug("ADB device detection error: {}", e)
+
+        # 2. Add saved registry devices
+        try:
+            saved_android = device_registry.list_devices()
+            for sdev in saved_android:
+                if not any(d.get("id") == sdev.serial for d in devices):
+                    devices.append(sdev.model_dump(mode="json"))
+        except Exception:
+            pass
+
+        # 3. Cross-device LAN companions
+        try:
+            from mitchell.crossdevice.pairing import pairing_manager
+            paired = pairing_manager.list_devices()
+            for d in paired:
+                if not any(dev.get("id") == getattr(d, "device_id", "") for dev in devices):
+                    devices.append(d.model_dump(mode="json"))
+        except Exception:
+            pass
+
+        return JSONResponse({"devices": devices, "count": len(devices)})
+
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "pair_android")
+
+        if action in ("pair_android", "setup_wireless"):
+            usb_serial = body.get("usb_serial")
+            port = body.get("port", 5555)
+            res = adb_client.setup_wireless(usb_serial=usb_serial, port=port)
+            await ws_manager.broadcast({
+                "type": "device_updated",
+                "action": "pair_android",
+                "result": res,
+            })
+            return JSONResponse(res)
+
+        elif action == "sync":
+            connected = adb_client.detect_connected_devices()
+            return JSONResponse({"status": "synced", "devices": connected})
+
+        return JSONResponse({"error": f"Unknown device action '{action}'"}, status_code=400)
+
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
 
 
 async def api_files_search(request: Request) -> JSONResponse:
@@ -1024,7 +1089,7 @@ def create_studio_app() -> Starlette:
 
         Route("/api/resources", endpoint=api_resources, methods=["GET"]),
         Route("/api/projects", endpoint=api_projects, methods=["GET", "POST"]),
-        Route("/api/devices", endpoint=api_devices, methods=["GET"]),
+        Route("/api/devices", endpoint=api_devices, methods=["GET", "POST"]),
         Route("/api/files/search", endpoint=api_files_search, methods=["POST"]),
 
         Route("/api/ide", endpoint=api_ide, methods=["GET", "POST"]),

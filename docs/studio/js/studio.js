@@ -138,7 +138,23 @@ class MitchellStudioController {
       };
     }
 
-    // 4. Show Devices
+    // 4. Pair Android / Wireless Debugging / Sync Devices
+    if (lower.includes('pair android') || lower.includes('wireless debugging') || lower.includes('wireless adb') || lower.includes('sync device') || lower.includes('sync phone') || lower.includes('connect phone')) {
+      fetch('/api/devices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pair_android', port: 5555 }),
+      }).then(r => r.json()).then(data => {
+        if (this.devicesComponent) this.devicesComponent.loadData();
+      });
+      this.activatePanel('devices');
+      return {
+        handled: true,
+        response: '⚡ **Android Wireless Pairing Sequence Initiated**\n1. Detecting USB connected phone...\n2. Enabling TCP/IP port `5555` on local Wi-Fi network...\n3. Establishing Wireless ADB connection...\n\n*Summoning Devices Console... You can unplug the USB cable once paired!*'
+      };
+    }
+
+    // 5. Show Devices Console
     if (lower.includes('show devices') || lower.includes('open devices') || lower === 'devices') {
       this.activatePanel('devices');
       return {
@@ -147,7 +163,7 @@ class MitchellStudioController {
       };
     }
 
-    // 5. Open Project
+    // 6. Open Project
     if (lower.startsWith('open project')) {
       const pName = raw.replace(/open project/i, '').trim();
       this.activatePanel('projects');
