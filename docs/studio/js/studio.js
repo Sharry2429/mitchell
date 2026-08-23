@@ -1,731 +1,772 @@
 /**
- * Mitchell Studio — Complete Grok & OLED Theme Engine Controller
- * Studio · Orb · Menus · Cursor+Antigravity IDE · Command Palette · All Surfaces
+ * Mitchell Studio — Command-Driven Autonomous Workspace Master Controller
+ * Chat is the Home. Everything else is summoned.
  */
 
 import { MitchellIDE } from './components/ide.js';
-import { DocumentsStudio } from './components/documents.js';
 import { DeepResearchStudio } from './components/research.js';
-import { SmartHomeStudio } from './components/iot.js';
-import { AgentsFloorStudio } from './components/agents_floor.js';
+import { SkillsMCPStudio } from './components/skills_mcp.js';
+import { ProjectsStudio } from './components/projects.js';
+import { ResourceWatchStudio } from './components/resource_watch.js';
+import { DevicesStudio } from './components/iot.js';
+import { FileExplorerStudio } from './components/file_explorer.js';
 
-// ── State Management ────────────────────────────────────────────────────────
-const state = {
-  activePanel: 'chat',
-  activeTheme: 'grok',
-  activeModel: 'grok-3',
-  activeFile: 'mitchell/manager/loop.py',
-  ws: null,
-  ideComponent: null,
-  docsComponent: null,
-  researchComponent: null,
-  homeComponent: null,
-  agentsComponent: null,
-  memoryCanvasInitialized: false,
-  mcpCatalog: [
-    { name: 'filesystem', desc: 'Read and write local files with access control.', installed: true },
-    { name: 'brave-search', desc: 'Real-time web search and content extraction.', installed: true },
-    { name: 'github', desc: 'Inspect pull requests, repos, issues, and git commits.', installed: true },
-    { name: 'whatsapp-mcp', desc: 'Baileys WhatsApp socket bridge for notifications.', installed: true },
-    { name: 'home-assistant', desc: 'Entity control for lights, climate, locks and IoT.', installed: true },
-    { name: 'memory-graph', desc: 'Episodic and semantic knowledge triple store.', installed: true },
-    { name: 'postgres', desc: 'Analytical SQL querying and database schemas.', installed: false },
-    { name: 'puppeteer', desc: 'Stealth headless browser automation engine.', installed: false },
-    { name: 'sqlite', desc: 'Embedded relational database for workspace data.', installed: false }
-  ]
-};
+class MitchellStudioController {
+  constructor() {
+    this.activePanel = 'chat';
+    this.activeModel = 'grok-3-mini';
+    this.activeTheme = 'grok';
+    this.ws = null;
+    this.sessions = [];
+    this.currentSessionId = null;
+    this.attachedFiles = [];
+    this.isRecordingVoice = false;
+    this.recognition = null;
 
-// ── Helper Selectors ────────────────────────────────────────────────────────
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-
-// ── View Map ────────────────────────────────────────────────────────────────
-const viewMap = {
-  studio: 'chat',
-  ide: 'ide',
-  orb: 'orb',
-  agents: 'agents',
-  research: 'research',
-  documents: 'documents',
-  memory: 'memory',
-  skills: 'skills',
-  settings: 'settings'
-};
-
-// ── Panel Navigation ────────────────────────────────────────────────────────
-export function activatePanel(id) {
-  state.activePanel = id;
-
-  $$('.panel').forEach(p => p.classList.remove('active'));
-  const panel = $(`#panel-${id}`);
-  if (panel) panel.classList.add('active');
-
-  $$('.activity-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.panel === id);
-  });
-
-  updateSidebar(id);
-
-  // Sync view tabs
-  const rev = Object.entries(viewMap).find(([, v]) => v === id);
-  if (rev) {
-    $$('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === rev[0]));
+    // Component instances
+    this.ideComponent = null;
+    this.researchComponent = null;
+    this.skillsComponent = null;
+    this.projectsComponent = null;
+    this.resourceWatch = new ResourceWatchStudio('resource-hud-overlay');
+    this.devicesComponent = null;
+    this.filesComponent = null;
   }
 
-  // Lazy instantiate functional components
-  if (id === 'ide') {
-    if (!state.ideComponent) {
-      state.ideComponent = new MitchellIDE('panel-ide');
-    }
-  } else if (id === 'documents') {
-    if (!state.docsComponent) {
-      state.docsComponent = new DocumentsStudio('documents-content');
-      state.docsComponent.render();
-    }
-  } else if (id === 'research') {
-    if (!state.researchComponent) {
-      state.researchComponent = new DeepResearchStudio('research-results-container');
-      state.researchComponent.bindEvents();
-    }
-  } else if (id === 'home') {
-    if (!state.homeComponent) {
-      state.homeComponent = new SmartHomeStudio('home-content');
-      state.homeComponent.render();
-    }
-  } else if (id === 'agents') {
-    if (!state.agentsComponent) {
-      state.agentsComponent = new AgentsFloorStudio('agents-grid-container');
-      state.agentsComponent.render();
-    }
-  } else if (id === 'memory') {
-    initMemoryCanvas();
-  } else if (id === 'skills') {
-    renderMCPCatalog();
-    loadSkills();
-  } else if (id === 'settings') {
-    loadSettings();
-  } else if (id === 'workspace') {
-    loadWorkspace();
-  }
-}
+  async init() {
+    this.loadSessionsFromStorage();
+    this.bindGlobalEvents();
+    this.initWebSocket();
+    this.initVoiceSTT();
+    this.renderHistorySidebar();
 
-// ── Sidebar Content by Context ──────────────────────────────────────────────
-function updateSidebar(panelId) {
-  const title = $('#sidebar-title');
-  const body = $('#sidebar-body');
-  const actions = $('#sidebar-actions');
-
-  if (panelId === 'ide') {
-    title.textContent = 'Explorer';
-    if (actions) actions.style.display = 'flex';
-    renderFileTreeSidebar(body);
-  } else if (panelId === 'memory') {
-    title.textContent = 'Memory';
-    if (actions) actions.style.display = 'none';
-    body.innerHTML = `
-      <div class="nav-section">
-        <div class="nav-section-label">Categories</div>
-        <button class="nav-item active"><i class="fa-solid fa-brain"></i> Self-Model</button>
-        <button class="nav-item"><i class="fa-solid fa-clock-rotate-left"></i> Episodic Log</button>
-        <button class="nav-item"><i class="fa-solid fa-network-wired"></i> Semantic Triples</button>
-      </div>
-    `;
-  } else if (panelId === 'skills') {
-    title.textContent = 'MCP Hub';
-    if (actions) actions.style.display = 'none';
-    body.innerHTML = `
-      <div class="nav-section">
-        <div class="nav-section-label">Registries</div>
-        <button class="nav-item active"><i class="fa-solid fa-server"></i> Active Servers <span class="badge">6</span></button>
-        <button class="nav-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Procedural Skills</button>
-      </div>
-    `;
-  } else if (panelId === 'settings') {
-    title.textContent = 'Settings';
-    if (actions) actions.style.display = 'none';
-    body.innerHTML = `
-      <div class="nav-section">
-        <div class="nav-section-label">Preferences</div>
-        <button class="nav-item active"><i class="fa-solid fa-key"></i> Model API Keys</button>
-        <button class="nav-item"><i class="fa-solid fa-sliders"></i> Engine Rules</button>
-      </div>
-    `;
-  } else {
-    title.textContent = 'Mitchell';
-    if (actions) actions.style.display = 'none';
-    body.innerHTML = `
-      <div class="nav-section">
-        <div class="nav-section-label">Surfaces</div>
-        <button class="nav-item ${panelId==='chat'?'active':''}" data-nav="chat"><i class="fa-solid fa-message"></i> Chat</button>
-        <button class="nav-item ${panelId==='ide'?'active':''}" data-nav="ide"><i class="fa-solid fa-code"></i> MitchellIDE</button>
-        <button class="nav-item ${panelId==='agents'?'active':''}" data-nav="agents"><i class="fa-solid fa-diagram-project"></i> Agent Floor <span class="badge">12</span></button>
-        <button class="nav-item ${panelId==='orb'?'active':''}" data-nav="orb"><i class="fa-solid fa-circle-nodes"></i> Orb</button>
-        <button class="nav-item ${panelId==='research'?'active':''}" data-nav="research"><i class="fa-solid fa-magnifying-glass-chart"></i> Research</button>
-        <button class="nav-item ${panelId==='documents'?'active':''}" data-nav="documents"><i class="fa-solid fa-file-lines"></i> Documents</button>
-        <button class="nav-item ${panelId==='home'?'active':''}" data-nav="home"><i class="fa-solid fa-house-signal"></i> Smart Home</button>
-      </div>
-      <div class="nav-section">
-        <div class="nav-section-label">System</div>
-        <button class="nav-item" data-nav="workspace"><i class="fa-solid fa-folder-tree"></i> Workspace</button>
-        <button class="nav-item" data-nav="memory"><i class="fa-solid fa-brain"></i> Memory</button>
-        <button class="nav-item" data-nav="skills"><i class="fa-solid fa-wand-magic-sparkles"></i> Skills & MCP</button>
-        <button class="nav-item" data-nav="settings"><i class="fa-solid fa-gear"></i> Settings</button>
-      </div>`;
-    body.querySelectorAll('[data-nav]').forEach(el => {
-      el.classList.toggle('active', el.dataset.nav === panelId);
-      el.addEventListener('click', () => activatePanel(el.dataset.nav));
-    });
-  }
-}
-
-function renderFileTreeSidebar(container) {
-  fetch('/api/ide')
-    .then(r => r.json())
-    .then(data => {
-      const tree = data.file_tree;
-      container.innerHTML = `
-        <div class="nav-section">
-          <div class="nav-section-label">Mitchell Workspace</div>
-          <div class="file-tree" id="ide-file-tree-root">
-            ${renderTreeNodes(tree?.children || [])}
-          </div>
-        </div>
-      `;
-      bindTreeClicks(container);
-    })
-    .catch(() => {
-      container.innerHTML = `
-        <div class="nav-section">
-          <div class="nav-section-label">Mitchell</div>
-          <div class="file-tree">
-            <div class="tree-folder"><i class="fa-solid fa-folder"></i> mitchell</div>
-            <div class="tree-children">
-              <div class="tree-folder"><i class="fa-solid fa-folder"></i> core</div>
-              <div class="tree-children">
-                <div class="tree-file active"><i class="fa-solid fa-file-code"></i> manager.py</div>
-                <div class="tree-file"><i class="fa-solid fa-file-code"></i> config.py</div>
-              </div>
-              <div class="tree-folder"><i class="fa-solid fa-folder"></i> hive</div>
-              <div class="tree-folder"><i class="fa-solid fa-folder"></i> studio</div>
-              <div class="tree-file"><i class="fa-solid fa-file-code"></i> cli.py</div>
-            </div>
-            <div class="tree-folder"><i class="fa-solid fa-folder"></i> docs</div>
-            <div class="tree-file"><i class="fa-brands fa-python"></i> pyproject.toml</div>
-          </div>
-        </div>
-      `;
-    });
-}
-
-function renderTreeNodes(nodes) {
-  let html = '';
-  for (const n of nodes) {
-    if (n.type === 'directory') {
-      html += `
-        <div class="tree-folder" data-path="${n.path}"><i class="fa-solid fa-folder"></i> ${n.name}</div>
-        <div class="tree-children" style="display:block;">
-          ${n.children ? renderTreeNodes(n.children) : ''}
-        </div>
-      `;
+    // Start with a new or most recent session
+    if (this.sessions.length > 0) {
+      this.loadSession(this.sessions[0].id);
     } else {
-      let icon = 'fa-solid fa-file-code';
-      if (n.name.endsWith('.py')) icon = 'fa-brands fa-python';
-      else if (n.name.endsWith('.js')) icon = 'fa-brands fa-js';
-      else if (n.name.endsWith('.md')) icon = 'fa-solid fa-file-lines';
-
-      html += `<div class="tree-file" data-path="${n.path}"><i class="${icon}"></i> ${n.name}</div>`;
+      this.createNewSession();
     }
-  }
-  return html;
-}
 
-function bindTreeClicks(container) {
-  container.querySelectorAll('.tree-file').forEach(fileEl => {
-    fileEl.addEventListener('click', () => {
-      container.querySelectorAll('.tree-file').forEach(f => f.classList.remove('active'));
-      fileEl.classList.add('active');
-      const path = fileEl.dataset.path || fileEl.textContent.trim();
-      loadFileIntoEditor(path);
-    });
-  });
-  container.querySelectorAll('.tree-folder').forEach(folderEl => {
-    folderEl.addEventListener('click', () => {
-      const next = folderEl.nextElementSibling;
-      if (next && next.classList.contains('tree-children')) {
-        next.style.display = next.style.display === 'none' ? 'block' : 'none';
+    // Expose controller globally
+    window.__mitchellStudioController = this;
+  }
+
+  // ── Layout Navigation & Dynamic Summoning ──────────────────────────────────
+  activatePanel(panelId, initialData = null) {
+    this.activePanel = panelId;
+
+    // Toggle active panel DOM
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(`panel-${panelId}`);
+    if (target) target.classList.add('active');
+
+    // Lazy instantiate components
+    if (panelId === 'ide') {
+      if (!this.ideComponent) {
+        this.ideComponent = new MitchellIDE('ide-container');
+        this.ideComponent.render();
       }
-    });
-  });
-}
-
-function loadFileIntoEditor(filePath) {
-  state.activeFile = filePath;
-  fetch('/api/ide', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'read_file', path: filePath }),
-  })
-    .then(r => r.json())
-    .then(data => {
-      if (data.content !== undefined) {
-        const codeEl = $('#editor-code');
-        if (codeEl) codeEl.textContent = data.content;
-        updateEditorGutter(data.content);
+      if (initialData && initialData.file) {
+        this.ideComponent.openFile(initialData.file);
       }
-    })
-    .catch(() => {});
-}
-
-function updateEditorGutter(content) {
-  const lineCount = (content.match(/\n/g) || []).length + 1;
-  const gutterEl = $('#editor-gutter');
-  if (gutterEl) {
-    let numbers = [];
-    for (let i = 1; i <= Math.max(lineCount, 18); i++) numbers.push(i);
-    gutterEl.innerHTML = numbers.join('<br>');
-  }
-}
-
-// ── Interactive Memory Physics Canvas ───────────────────────────────────────
-function initMemoryCanvas() {
-  if (state.memoryCanvasInitialized) return;
-  state.memoryCanvasInitialized = true;
-
-  const canvas = $('#memory-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  const nodes = [
-    { x: 300, y: 210, r: 22, label: 'Mitchell Core', color: '#22d3ee', vx: 0, vy: 0 },
-    { x: 180, y: 120, r: 15, label: 'Self-Model', color: '#34d399', vx: 0.2, vy: -0.1 },
-    { x: 420, y: 130, r: 15, label: 'Episodic', color: '#a78bfa', vx: -0.15, vy: 0.2 },
-    { x: 200, y: 310, r: 16, label: 'MCP Tools', color: '#fbbf24', vx: 0.1, vy: 0.15 },
-    { x: 400, y: 300, r: 14, label: 'Semantic Triples', color: '#60a5fa', vx: -0.2, vy: -0.1 },
-    { x: 110, y: 220, r: 13, label: 'Real CDP', color: '#4ade80', vx: 0.1, vy: -0.15 },
-    { x: 490, y: 210, r: 13, label: 'Home Assistant', color: '#f87171', vx: -0.1, vy: 0.1 }
-  ];
-
-  const links = [
-    [0, 1], [0, 2], [0, 3], [0, 4], [1, 5], [3, 6], [2, 4]
-  ];
-
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.lineWidth = 1.5;
-    for (const [i, j] of links) {
-      ctx.beginPath();
-      ctx.moveTo(nodes[i].x, nodes[i].y);
-      ctx.lineTo(nodes[j].x, nodes[j].y);
-      ctx.stroke();
-    }
-
-    for (const n of nodes) {
-      n.x += n.vx;
-      n.y += n.vy;
-      if (n.x < n.r || n.x > canvas.width - n.r) n.vx *= -1;
-      if (n.y < n.r || n.y > canvas.height - n.r) n.vy *= -1;
-
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = '#151518';
-      ctx.strokeStyle = n.color;
-      ctx.lineWidth = 1.5;
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#f4f4f5';
-      ctx.font = '10px Inter';
-      ctx.textAlign = 'center';
-      ctx.fillText(n.label, n.x, n.y + n.r + 12);
-    }
-
-    if (state.activePanel === 'memory') {
-      requestAnimationFrame(animate);
-    } else {
-      state.memoryCanvasInitialized = false;
+    } else if (panelId === 'research') {
+      if (!this.researchComponent) {
+        this.researchComponent = new DeepResearchStudio('research-container');
+      }
+      this.researchComponent.render(initialData?.query || '');
+    } else if (panelId === 'skills') {
+      if (!this.skillsComponent) {
+        this.skillsComponent = new SkillsMCPStudio('skills-container');
+      }
+      this.skillsComponent.render();
+      if (initialData?.package) {
+        this.skillsComponent.installMCP(initialData.package);
+      }
+    } else if (panelId === 'projects') {
+      if (!this.projectsComponent) {
+        this.projectsComponent = new ProjectsStudio('projects-container');
+      }
+      this.projectsComponent.render();
+    } else if (panelId === 'devices') {
+      if (!this.devicesComponent) {
+        this.devicesComponent = new DevicesStudio('devices-container');
+      }
+      this.devicesComponent.render();
+    } else if (panelId === 'files') {
+      if (!this.filesComponent) {
+        this.filesComponent = new FileExplorerStudio('file-explorer-container');
+      }
+      this.filesComponent.render();
+      if (initialData?.query) {
+        this.filesComponent.searchFiles(initialData.query);
+      }
+    } else if (panelId === 'settings') {
+      this.loadSettings();
     }
   }
-  requestAnimationFrame(animate);
-}
 
-// ── MCP Catalog Renderer ────────────────────────────────────────────────────
-function renderMCPCatalog() {
-  const container = $('#mcp-catalog-grid');
-  if (!container) return;
+  // ── Natural Language Command Router ───────────────────────────────────────
+  parseAndExecuteCommand(text) {
+    const raw = text.trim();
+    const lower = raw.toLowerCase();
 
-  container.innerHTML = state.mcpCatalog.map(m => `
-    <div class="mcp-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span class="mcp-name">${m.name}</span>
-        <span class="badge" style="background:${m.installed?'rgba(52,211,153,0.15)':'rgba(255,255,255,0.06)'};color:${m.installed?'var(--accent-mint)':'var(--text-muted)'}">
-          ${m.installed ? 'Installed' : 'Available'}
-        </span>
+    // 1. Open IDE
+    if (lower === 'open ide' || lower === 'mitchell open ide' || lower === 'launch ide' || lower === 'ide') {
+      this.activatePanel('ide');
+      return {
+        handled: true,
+        response: 'Opening IDE Mode with Monaco editor, workspace file tree, and interactive terminal.'
+      };
+    }
+
+    // 2. Open Researcher / Deep Research
+    if (lower.startsWith('open researcher') || lower.startsWith('deep research') || lower.startsWith('research ')) {
+      const q = raw.replace(/open researcher/i, '').replace(/deep research/i, '').replace(/research/i, '').replace(/^[:\s-]+/, '');
+      this.activatePanel('research', { query: q });
+      return {
+        handled: true,
+        response: q ? `Summoning Deep Researcher for: "${q}"...` : 'Summoning Deep Researcher...'
+      };
+    }
+
+    // 3. Show Resources / Resource Watch HUD
+    if (lower.includes('show resources') || lower.includes('resource watch') || lower.includes('system resources') || lower === 'resources') {
+      this.resourceWatch.show();
+      return {
+        handled: true,
+        response: 'Displaying floating Resource Watch HUD overlay with live CPU, RAM, Disk, and Battery telemetry.'
+      };
+    }
+
+    // 4. Show Devices
+    if (lower.includes('show devices') || lower.includes('open devices') || lower === 'devices') {
+      this.activatePanel('devices');
+      return {
+        handled: true,
+        response: 'Opening Devices Console (Android companion, Windows workstation, Home Assistant IoT).'
+      };
+    }
+
+    // 5. Open Project
+    if (lower.startsWith('open project')) {
+      const pName = raw.replace(/open project/i, '').trim();
+      this.activatePanel('projects');
+      return {
+        handled: true,
+        response: `Opening Isolated Projects workspace${pName ? ` (target: ${pName})` : ''}...`
+      };
+    }
+
+    // 6. Install MCP
+    if (lower.includes('install @') || lower.includes('install mcp')) {
+      const pkg = raw.split(/install/i).pop().trim();
+      this.activatePanel('skills', { package: pkg });
+      return {
+        handled: true,
+        response: `Installing live Model Context Protocol server: \`${pkg}\`...`
+      };
+    }
+
+    // 7. Find Document / Files
+    if (lower.includes('find document') || lower.includes('find file') || lower.includes('search file')) {
+      const q = raw.split(/contains|that|for/i).pop().trim();
+      this.activatePanel('files', { query: q });
+      return {
+        handled: true,
+        response: `Searching workspace documents containing "${q}"...`
+      };
+    }
+
+    // 8. Open API Keys / .env
+    if ((lower.includes('api keys') || lower.includes('.env')) && lower.includes('file')) {
+      this.activatePanel('ide', { file: '.env' });
+      return {
+        handled: true,
+        response: 'Opening `.env` in the Monaco editor.'
+      };
+    }
+
+    return { handled: false };
+  }
+
+  // ── Chat Messaging Engine ──────────────────────────────────────────────────
+  async sendMessage(promptText = '') {
+    const input = document.getElementById('chat-prompt-input');
+    const text = promptText || input?.value.trim();
+    if (!text && this.attachedFiles.length === 0) return;
+
+    if (input) input.value = '';
+
+    // Hide hero on first message
+    const hero = document.getElementById('chat-hero');
+    if (hero) hero.style.display = 'none';
+
+    // Append User message
+    const userMsg = {
+      role: 'user',
+      content: text,
+      files: [...this.attachedFiles],
+      timestamp: new Date().toISOString(),
+    };
+    this.appendMessageToStream(userMsg);
+    this.attachedFiles = [];
+    this.renderAttachedChips();
+
+    // Check client-side command parsing
+    const cmdResult = this.parseAndExecuteCommand(text);
+    if (cmdResult.handled) {
+      this.appendMessageToStream({
+        role: 'assistant',
+        content: cmdResult.response,
+        timestamp: new Date().toISOString(),
+      });
+      this.saveActiveSession();
+      return;
+    }
+
+    // Show Thinking indicator
+    const stream = document.getElementById('chat-messages-stream');
+    const thinkingElem = document.createElement('div');
+    thinkingElem.className = 'chat-bubble-wrap assistant';
+    thinkingElem.id = 'thinking-indicator';
+    thinkingElem.innerHTML = `
+      <div class="chat-avatar"><i class="fa-solid fa-sparkles"></i></div>
+      <div class="chat-bubble" style="color:var(--accent-cyan);font-family:var(--font-mono);font-size:12px;">
+        <i class="fa-solid fa-spinner fa-spin"></i> Mitchell thinking (${this.activeModel})...
       </div>
-      <div class="mcp-desc">${m.desc}</div>
-      <button class="mcp-install-btn ${m.installed ? 'installed' : ''}" data-mcp="${m.name}">
-        <i class="fa-solid ${m.installed ? 'fa-check' : 'fa-download'}"></i> ${m.installed ? 'Configured' : 'Install'}
-      </button>
-    </div>
-  `).join('');
+    `;
+    stream?.appendChild(thinkingElem);
+    stream.scrollTop = stream.scrollHeight;
 
-  container.querySelectorAll('.mcp-install-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const name = btn.dataset.mcp;
-      const target = state.mcpCatalog.find(x => x.name === name);
-      if (target) {
-        target.installed = true;
-        renderMCPCatalog();
-        addChatMessage('assistant', `<strong>MCP Server Installed:</strong> <code>${name}</code> is online.`);
-      }
-    });
-  });
-}
-
-function loadSkills() {
-  const listEl = $('#skills-catalog-list');
-  if (!listEl) return;
-  fetch('/api/skills')
-    .then(r => r.json())
-    .then(data => {
-      const skills = data.skills || [];
-      listEl.innerHTML = skills.map(s => `
-        <div style="padding:8px 12px;background:var(--bg-elevated);border:1px solid var(--glass-border);border-radius:var(--radius-xs);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="font-weight:600;font-size:12.5px;">${s.name}</div>
-            <div style="font-size:11px;color:var(--text-secondary);">${s.description}</div>
-          </div>
-          <span class="badge" style="background:rgba(167,139,250,0.15);color:var(--accent-violet)">SKILL.md</span>
-        </div>
-      `).join('');
-    })
-    .catch(() => {});
-}
-
-// ── Settings & API Keys Manager ─────────────────────────────────────────────
-function loadSettings() {
-  fetch('/api/settings')
-    .then(r => r.json())
-    .then(data => {
-      const cfg = data.keys_configured || {};
-      if (cfg.xai) $('#dot-xai')?.classList.add('configured');
-      if (cfg.anthropic) $('#dot-anthropic')?.classList.add('configured');
-      if (cfg.openai) $('#dot-openai')?.classList.add('configured');
-      if (cfg.gemini) $('#dot-gemini')?.classList.add('configured');
-      if (cfg.groq) $('#dot-groq')?.classList.add('configured');
-      if (cfg.deepseek) $('#dot-deepseek')?.classList.add('configured');
-      if (cfg.homeassistant) $('#dot-ha')?.classList.add('configured');
-      if (data.homeassistant_url) $('#key-ha-url').value = data.homeassistant_url;
-    })
-    .catch(() => {});
-}
-
-function saveSettings() {
-  const payload = {
-    xai_api_key: $('#key-xai')?.value,
-    anthropic_api_key: $('#key-anthropic')?.value,
-    openai_api_key: $('#key-openai')?.value,
-    gemini_api_key: $('#key-gemini')?.value,
-    groq_api_key: $('#key-groq')?.value,
-    deepseek_api_key: $('#key-deepseek')?.value,
-    homeassistant_url: $('#key-ha-url')?.value,
-    homeassistant_token: $('#key-ha-token')?.value,
-  };
-
-  fetch('/api/settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-    .then(r => r.json())
-    .then(data => {
-      const msg = $('#keys-status-msg');
-      if (msg) {
-        msg.textContent = `✓ Keys saved to .env (${data.updated?.length || 0} updated)`;
-        setTimeout(() => msg.textContent = '', 4000);
-      }
-      loadSettings();
-    })
-    .catch(e => alert(`Failed to save keys: ${e.message}`));
-}
-
-function loadWorkspace() {
-  fetch('/api/workspace?section=summary')
-    .then(r => r.json())
-    .then(data => {
-      const el = $('#workspace-content');
-      if (el) {
-        el.innerHTML = `
-          <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));gap:12px;">
-            <div class="metric-card"><div class="metric-title">Documents</div><div class="metric-value">${data.documents_count || 4}</div></div>
-            <div class="metric-card"><div class="metric-title">Spreadsheets</div><div class="metric-value">${data.spreadsheets_count || 1}</div></div>
-            <div class="metric-card"><div class="metric-title">Notes & Graph</div><div class="metric-value">${data.notes_count || 6}</div></div>
-            <div class="metric-card"><div class="metric-title">Projects & Kanban</div><div class="metric-value">${data.projects_count || 2}</div></div>
-          </div>
-        `;
-      }
-    })
-    .catch(() => {});
-}
-
-// ── Chat & Messaging ────────────────────────────────────────────────────────
-function addChatMessage(role, content) {
-  const container = $('#chat-messages');
-  if (!container) return;
-
-  const msgEl = document.createElement('div');
-  msgEl.className = `msg ${role}`;
-  msgEl.innerHTML = `
-    <div class="msg-avatar"><i class="fa-solid ${role === 'user' ? 'fa-user' : 'fa-sparkles'}"></i></div>
-    <div class="msg-bubble">${content}</div>
-  `;
-  container.appendChild(msgEl);
-  container.scrollTop = container.scrollHeight;
-}
-
-function sendChat() {
-  const input = $('#chat-input');
-  const text = input?.value.trim();
-  if (!text) return;
-
-  addChatMessage('user', text);
-  input.value = '';
-
-  fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: text }),
-  })
-    .then(r => r.json())
-    .then(data => {
-      addChatMessage('assistant', data.response || 'Task completed.');
-      if (data.cost) updateCost(data.cost);
-    })
-    .catch(() => {
-      addChatMessage('assistant', `Acknowledged: "${text}". Executing autonomous loop.`);
-    });
-}
-
-function updateCost(costData) {
-  const el = $('#status-cost-count');
-  if (el && costData.today_spent_inr) {
-    el.textContent = `${costData.today_spent_inr} · ${costData.total_tokens || 0} tokens`;
-  }
-}
-
-// ── WebSocket Stream ────────────────────────────────────────────────────────
-function connectWebSocket() {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${window.location.host}/ws`;
-
-  try {
-    const ws = new WebSocket(wsUrl);
-    ws.onopen = () => {
-      $('#ws-status-bar').textContent = '● Connected';
-      $('#ws-status-bar').className = 'live';
-    };
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'chat_response') {
-          addChatMessage('assistant', msg.content);
-        } else if (msg.type === 'status') {
-          $('#topbar-status-text').textContent = msg.status;
-        }
-      } catch (e) {}
-    };
-    ws.onclose = () => {
-      $('#ws-status-bar').textContent = '○ Reconnecting';
-      $('#ws-status-bar').className = 't-dim';
-      setTimeout(connectWebSocket, 3000);
-    };
-  } catch (e) {}
-}
-
-// ── DOM Ready Initialization ────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  /* Themes */
-  $$('.theme-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.theme-chip').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.documentElement.setAttribute('data-theme', btn.dataset.theme);
-      state.activeTheme = btn.dataset.theme;
-    });
-  });
-
-  /* View tabs */
-  $$('.view-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      $$('.view-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      activatePanel(viewMap[tab.dataset.view] || 'chat');
-    });
-  });
-
-  /* Activity buttons */
-  $$('.activity-btn').forEach(btn => {
-    btn.addEventListener('click', () => activatePanel(btn.dataset.panel));
-  });
-
-  /* Mini orb trigger */
-  $('#mini-orb-trigger')?.addEventListener('click', () => activatePanel('orb'));
-
-  /* Quick chips */
-  $$('.chip[data-go]').forEach(chip => {
-    chip.addEventListener('click', () => activatePanel(chip.dataset.go));
-  });
-
-  /* Sidebar toggle */
-  $('#toggle-sidebar')?.addEventListener('click', () => {
-    $('#sidebar')?.classList.toggle('collapsed');
-  });
-
-  /* Orb states */
-  $$('.orb-state-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.orb-state-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const orb = $('#main-orb');
-      if (orb) orb.className = 'orb ' + btn.dataset.state;
-    });
-  });
-
-  /* Model selector */
-  const modelPill = $('#model-selector-pill');
-  modelPill?.addEventListener('click', () => {
-    const models = ['Grok 3 · xAI', 'Claude 3.7 Sonnet', 'GPT-4o (OpenAI)', 'Gemini 2.0 Flash', 'DeepSeek-R1', 'Local Llama 3'];
-    const current = $('#model-pill-label').textContent;
-    const nextIdx = (models.indexOf(current) + 1) % models.length;
-    $('#model-pill-label').textContent = models[nextIdx];
-  });
-
-  /* Chat Send */
-  $('#chat-send')?.addEventListener('click', sendChat);
-  $('#chat-input')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendChat();
-    }
-  });
-
-  /* Deep Research Execute */
-  $('#research-run-btn')?.addEventListener('click', () => {
-    const query = $('#research-query-input')?.value.trim();
-    if (!query) return;
-    const container = $('#research-results-container');
-    container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Decomposing queries & crawling live verified sources...</p></div>';
-
-    fetch('/api/research', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query, max_sources: 4 }),
-    })
-      .then(r => r.json())
-      .then(res => {
-        container.innerHTML = `
-          <div style="background:var(--bg-surface);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:14px;">
-            <div style="font-weight:700;font-size:15px;margin-bottom:8px;">${res.query}</div>
-            <div class="sources-grid">
-              ${res.sources.map(s => `
-                <div class="source-card">
-                  <div style="font-weight:600;color:var(--accent-cyan);margin-bottom:2px;"><i class="fa-solid fa-shield-check"></i> ${s.title}</div>
-                  <div style="font-size:10.5px;color:var(--text-muted);">${s.url}</div>
-                </div>
-              `).join('')}
-            </div>
-            <div style="margin-top:10px;line-height:1.6;color:var(--text-primary);font-size:12.5px;">
-              ${res.detailed_report.replace(/\[(\d+)\]/g, '<span class="citation-badge">[$1]</span>')}
-            </div>
-          </div>
-        `;
-      })
-      .catch(e => container.innerHTML = `<div class="empty-state"><p>Error: ${e.message}</p></div>`);
-  });
-
-  /* Settings Save */
-  $('#save-keys-btn')?.addEventListener('click', saveSettings);
-
-  /* Terminal Runner in IDE */
-  $('#terminal-cli-input')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      const cmd = e.target.value.trim();
-      if (!cmd) return;
-      e.target.value = '';
-      const output = $('#ide-terminal-output');
-      output.innerHTML += `<div><span class="t-prompt">mitchell@studio</span> <span class="t-dim">~</span> <span class="t-cyan">$</span> ${cmd}</div>`;
-
-      fetch('/api/ide', {
+    // Send to backend
+    try {
+      const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'run_command', command: cmd }),
-      })
-        .then(r => r.json())
-        .then(res => {
-          output.innerHTML += `<div class="${res.exit_code===0?'t-green':'t-dim'}">${res.stdout || res.stderr || 'Executed.'}</div>`;
-          output.scrollTop = output.scrollHeight;
-        })
-        .catch(err => {
-          output.innerHTML += `<div class="t-dim">Error: ${err.message}</div>`;
-        });
+        body: JSON.stringify({
+          message: text,
+          model: this.activeModel,
+          session_id: this.currentSessionId,
+        }),
+      });
+      const data = await resp.json();
+      thinkingElem.remove();
+
+      const assistantMsg = {
+        role: 'assistant',
+        content: data.response || 'No response returned.',
+        duration: data.duration,
+        command_intent: data.command_intent,
+        timestamp: new Date().toISOString(),
+      };
+      this.appendMessageToStream(assistantMsg);
+
+      // If backend detected a command intent, execute layout switch
+      if (data.command_intent) {
+        if (data.command_intent.action === 'open_ide') this.activatePanel('ide');
+        else if (data.command_intent.action === 'open_researcher') this.activatePanel('research', { query: data.command_intent.query });
+        else if (data.command_intent.action === 'show_resources') this.resourceWatch.show();
+        else if (data.command_intent.action === 'show_devices') this.activatePanel('devices');
+      }
+
+      this.saveActiveSession();
+    } catch (e) {
+      thinkingElem.remove();
+      this.appendMessageToStream({
+        role: 'assistant',
+        content: `Error contacting Mitchell Hive: ${e.message}`,
+        timestamp: new Date().toISOString(),
+      });
     }
-  });
-
-  /* Composer AI Actions */
-  $('#composer-apply-btn')?.addEventListener('click', () => {
-    alert('Surgical Diff applied to manager.py.');
-  });
-
-  /* Command palette */
-  const overlay = $('#cmd-overlay');
-  function openCmd() {
-    overlay?.classList.add('open');
-    $('#cmd-input')?.focus();
   }
-  function closeCmd() {
-    overlay?.classList.remove('open');
-  }
-  $('#open-cmd')?.addEventListener('click', openCmd);
-  overlay?.addEventListener('click', e => { if (e.target === overlay) closeCmd(); });
-  document.addEventListener('keydown', e => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-      e.preventDefault();
-      overlay?.classList.contains('open') ? closeCmd() : openCmd();
+
+  appendMessageToStream(msg) {
+    const stream = document.getElementById('chat-messages-stream');
+    if (!stream) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = `chat-bubble-wrap ${msg.role}`;
+
+    const icon = msg.role === 'user' ? 'fa-user' : 'fa-sparkles';
+    let contentHtml = this.formatMarkdown(msg.content);
+
+    if (msg.files && msg.files.length > 0) {
+      contentHtml = `<div style="display:flex;gap:4px;margin-bottom:6px;">${msg.files.map(f => `<span class="attached-chip"><i class="fa-solid fa-file"></i> ${f}</span>`).join('')}</div>` + contentHtml;
     }
-    if (e.key === 'Escape') closeCmd();
-  });
 
-  $$('.cmd-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const act = item.dataset.act;
-      closeCmd();
-      if (act) activatePanel(act);
+    wrap.innerHTML = `
+      <div class="chat-avatar"><i class="fa-solid ${icon}"></i></div>
+      <div class="chat-bubble">${contentHtml}</div>
+    `;
+
+    stream.appendChild(wrap);
+    stream.scrollTop = stream.scrollHeight;
+
+    // Track in active session
+    const session = this.getActiveSession();
+    if (session) {
+      session.messages.push(msg);
+      if (session.messages.length === 1 && msg.role === 'user') {
+        session.title = msg.content.slice(0, 32) + (msg.content.length > 32 ? '...' : '');
+        this.renderHistorySidebar();
+      }
+    }
+  }
+
+  formatMarkdown(text) {
+    if (!text) return '';
+    let formatted = text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+    return formatted;
+  }
+
+  // ── Session History Persistence ───────────────────────────────────────────
+  loadSessionsFromStorage() {
+    try {
+      const data = localStorage.getItem('mitchell_chat_sessions');
+      this.sessions = data ? JSON.parse(data) : [];
+    } catch (e) {
+      this.sessions = [];
+    }
+  }
+
+  saveActiveSession() {
+    try {
+      localStorage.setItem('mitchell_chat_sessions', JSON.stringify(this.sessions));
+    } catch (e) {}
+  }
+
+  createNewSession() {
+    const session = {
+      id: 'sess_' + Date.now(),
+      title: 'New Conversation',
+      created_at: new Date().toISOString(),
+      messages: [],
+    };
+    this.sessions.unshift(session);
+    this.currentSessionId = session.id;
+    this.saveActiveSession();
+    this.renderHistorySidebar();
+    this.renderActiveSessionMessages();
+    this.activatePanel('chat');
+
+    // Show hero
+    const hero = document.getElementById('chat-hero');
+    if (hero) hero.style.display = 'flex';
+  }
+
+  loadSession(sessionId) {
+    this.currentSessionId = sessionId;
+    this.renderHistorySidebar();
+    this.renderActiveSessionMessages();
+    this.activatePanel('chat');
+  }
+
+  deleteSession(sessionId, e) {
+    if (e) e.stopPropagation();
+    this.sessions = this.sessions.filter(s => s.id !== sessionId);
+    this.saveActiveSession();
+    if (this.currentSessionId === sessionId) {
+      if (this.sessions.length > 0) this.loadSession(this.sessions[0].id);
+      else this.createNewSession();
+    } else {
+      this.renderHistorySidebar();
+    }
+  }
+
+  getActiveSession() {
+    return this.sessions.find(s => s.id === this.currentSessionId);
+  }
+
+  renderActiveSessionMessages() {
+    const stream = document.getElementById('chat-messages-stream');
+    const hero = document.getElementById('chat-hero');
+    if (!stream) return;
+
+    stream.innerHTML = '';
+    const session = this.getActiveSession();
+
+    if (session && session.messages.length > 0) {
+      if (hero) hero.style.display = 'none';
+      session.messages.forEach(m => {
+        const wrap = document.createElement('div');
+        wrap.className = `chat-bubble-wrap ${m.role}`;
+        const icon = m.role === 'user' ? 'fa-user' : 'fa-sparkles';
+        wrap.innerHTML = `
+          <div class="chat-avatar"><i class="fa-solid ${icon}"></i></div>
+          <div class="chat-bubble">${this.formatMarkdown(m.content)}</div>
+        `;
+        stream.appendChild(wrap);
+      });
+      stream.scrollTop = stream.scrollHeight;
+    } else {
+      if (hero) hero.style.display = 'flex';
+    }
+  }
+
+  renderHistorySidebar() {
+    const todayGroup = document.getElementById('history-group-today');
+    const yesterdayGroup = document.getElementById('history-group-yesterday');
+    const weekGroup = document.getElementById('history-group-week');
+
+    if (!todayGroup || !yesterdayGroup || !weekGroup) return;
+
+    todayGroup.innerHTML = '';
+    yesterdayGroup.innerHTML = '';
+    weekGroup.innerHTML = '';
+
+    const now = new Date();
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    this.sessions.forEach(sess => {
+      const sessDate = new Date(sess.created_at || Date.now());
+      const diff = now - sessDate;
+
+      const item = document.createElement('div');
+      item.className = `history-item ${sess.id === this.currentSessionId ? 'active' : ''}`;
+      item.innerHTML = `
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;"><i class="fa-regular fa-message" style="margin-right:6px;font-size:11px;"></i>${sess.title || 'Conversation'}</span>
+        <button class="history-item-del" title="Delete"><i class="fa-solid fa-trash"></i></button>
+      `;
+
+      item.addEventListener('click', () => this.loadSession(sess.id));
+      item.querySelector('.history-item-del')?.addEventListener('click', (e) => this.deleteSession(sess.id, e));
+
+      if (diff < oneDay) {
+        todayGroup.appendChild(item);
+      } else if (diff < 2 * oneDay) {
+        yesterdayGroup.appendChild(item);
+      } else {
+        weekGroup.appendChild(item);
+      }
     });
-  });
-
-  /* Context menu on editor */
-  const ctx = $('#ctx-menu');
-  $('#ide-editor-container')?.addEventListener('contextmenu', e => {
-    e.preventDefault();
-    if (ctx) {
-      ctx.style.left = e.clientX + 'px';
-      ctx.style.top = e.clientY + 'px';
-      ctx.classList.add('open');
-    }
-  });
-  document.addEventListener('click', () => ctx?.classList.remove('open'));
-
-  /* Chat textarea auto-grow */
-  const ta = $('#chat-input');
-  if (ta) {
-    ta.addEventListener('input', () => {
-      ta.style.height = 'auto';
-      ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
-    });
   }
 
-  /* Initial setup */
-  activatePanel('chat');
-  connectWebSocket();
+  // ── Voice Dictation (Web Speech API) ──────────────────────────────────────
+  initVoiceSTT() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      this.recognition = new SpeechRecognition();
+      this.recognition.continuous = false;
+      this.recognition.interimResults = false;
+      this.recognition.lang = 'en-US';
+
+      this.recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const input = document.getElementById('chat-prompt-input');
+        if (input) {
+          input.value = (input.value ? input.value + ' ' : '') + transcript;
+        }
+        this.stopVoice();
+      };
+
+      this.recognition.onerror = () => this.stopVoice();
+      this.recognition.onend = () => this.stopVoice();
+    }
+  }
+
+  toggleVoice() {
+    if (!this.recognition) {
+      window.alert('Speech recognition is not supported in this browser. Please use Chrome/Edge or type your command.');
+      return;
+    }
+    if (this.isRecordingVoice) {
+      this.stopVoice();
+    } else {
+      this.startVoice();
+    }
+  }
+
+  startVoice() {
+    if (!this.recognition) return;
+    this.isRecordingVoice = true;
+    const btn = document.getElementById('chat-voice-btn');
+    if (btn) btn.classList.add('recording');
+    try {
+      this.recognition.start();
+    } catch (e) {}
+  }
+
+  stopVoice() {
+    this.isRecordingVoice = false;
+    const btn = document.getElementById('chat-voice-btn');
+    if (btn) btn.classList.remove('recording');
+    try {
+      this.recognition?.stop();
+    } catch (e) {}
+  }
+
+  // ── WebSocket Real-Time Stream ─────────────────────────────────────────────
+  initWebSocket() {
+    const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProto}//${window.location.host}/ws`;
+
+    try {
+      this.ws = new WebSocket(wsUrl);
+      this.ws.onopen = () => {
+        const dot = document.getElementById('ws-status-dot');
+        const lbl = document.getElementById('ws-status-label');
+        if (dot) dot.className = 'status-indicator online';
+        if (lbl) lbl.textContent = 'Connected to Hive';
+      };
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'cost' && data.cost) {
+            const costElem = document.getElementById('status-cost-summary');
+            if (costElem) costElem.textContent = `${data.cost.currency || '₹'}${data.cost.total_cost || '0.00'} · ${data.cost.total_tokens || 0} tokens`;
+          }
+        } catch (e) {}
+      };
+      this.ws.onclose = () => {
+        const dot = document.getElementById('ws-status-dot');
+        const lbl = document.getElementById('ws-status-label');
+        if (dot) dot.className = 'status-indicator';
+        if (lbl) lbl.textContent = 'Offline';
+        setTimeout(() => this.initWebSocket(), 5000);
+      };
+    } catch (e) {
+      console.warn('WebSocket init fallback to REST API');
+    }
+  }
+
+  // ── Settings Management ───────────────────────────────────────────────────
+  async loadSettings() {
+    try {
+      const resp = await fetch('/api/settings');
+      const data = await resp.json();
+      const keys = data.keys_configured || {};
+      ['anthropic', 'openai', 'xai', 'gemini', 'groq', 'deepseek'].forEach(k => {
+        const dot = document.getElementById(`dot-${k}`);
+        if (dot) dot.className = `key-indicator ${keys[k] ? 'active' : ''}`;
+      });
+      if (data.homeassistant_url) {
+        const haInput = document.getElementById('key-ha-url');
+        if (haInput) haInput.value = data.homeassistant_url;
+      }
+    } catch (e) {}
+  }
+
+  async saveSettings() {
+    const payload = {};
+    const map = {
+      'key-anthropic': 'anthropic_api_key',
+      'key-openai': 'openai_api_key',
+      'key-xai': 'xai_api_key',
+      'key-gemini': 'gemini_api_key',
+      'key-groq': 'groq_api_key',
+      'key-deepseek': 'deepseek_api_key',
+      'key-ha-url': 'homeassistant_url',
+      'key-ha-token': 'homeassistant_token',
+    };
+
+    for (const [elemId, field] of Object.entries(map)) {
+      const val = document.getElementById(elemId)?.value.trim();
+      if (val) payload[field] = val;
+    }
+
+    const statusBadge = document.getElementById('save-keys-status');
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (statusBadge) {
+        statusBadge.textContent = 'Saved to .env!';
+        setTimeout(() => statusBadge.textContent = '', 3000);
+      }
+      this.loadSettings();
+    } catch (e) {
+      if (statusBadge) statusBadge.textContent = 'Save error: ' + e.message;
+    }
+  }
+
+  // ── Global Event Bindings ─────────────────────────────────────────────────
+  bindGlobalEvents() {
+    // Brand Home button
+    document.getElementById('brand-home-btn')?.addEventListener('click', () => this.activatePanel('chat'));
+
+    // Toggle Sidebar
+    document.getElementById('toggle-history-btn')?.addEventListener('click', () => {
+      const sb = document.getElementById('history-sidebar');
+      sb?.classList.toggle('collapsed');
+    });
+
+    // New Chat
+    document.getElementById('new-chat-btn')?.addEventListener('click', () => this.createNewSession());
+
+    // Prompt Send
+    document.getElementById('chat-send-btn')?.addEventListener('click', () => this.sendMessage());
+    const promptInput = document.getElementById('chat-prompt-input');
+    promptInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.sendMessage();
+      }
+    });
+
+    // Voice Dictation
+    document.getElementById('chat-voice-btn')?.addEventListener('click', () => this.toggleVoice());
+
+    // Attachment
+    const fileInput = document.getElementById('chat-file-input');
+    const attachBtn = document.getElementById('chat-attach-btn');
+    attachBtn?.addEventListener('click', () => fileInput?.click());
+    fileInput?.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      files.forEach(f => this.attachedFiles.push(f.name));
+      this.renderAttachedChips();
+    });
+
+    // Hero quick command chips
+    document.querySelectorAll('.chip-cmd').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const cmd = chip.dataset.cmd;
+        if (cmd) this.sendMessage(cmd);
+      });
+    });
+
+    // Titlebar Quick Summons
+    document.getElementById('summon-ide-btn')?.addEventListener('click', () => this.activatePanel('ide'));
+    document.getElementById('summon-researcher-btn')?.addEventListener('click', () => this.activatePanel('research'));
+    document.getElementById('summon-resources-btn')?.addEventListener('click', () => this.resourceWatch.toggle());
+
+    // Sidebar footer nav
+    document.getElementById('nav-projects-btn')?.addEventListener('click', () => this.activatePanel('projects'));
+    document.getElementById('nav-skills-btn')?.addEventListener('click', () => this.activatePanel('skills'));
+    document.getElementById('nav-files-btn')?.addEventListener('click', () => this.activatePanel('files'));
+    document.getElementById('nav-devices-btn')?.addEventListener('click', () => this.activatePanel('devices'));
+    document.getElementById('nav-settings-btn')?.addEventListener('click', () => this.activatePanel('settings'));
+
+    // Model dropdown
+    const modelBtn = document.getElementById('model-selector-btn');
+    const modelMenu = document.getElementById('model-dropdown-menu');
+    modelBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modelMenu?.classList.toggle('open');
+    });
+    document.querySelectorAll('.model-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const m = item.dataset.model;
+        this.activeModel = m;
+        document.querySelectorAll('.model-menu-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        const lbl = document.getElementById('current-model-label');
+        if (lbl) lbl.textContent = item.querySelector('.model-item-title')?.textContent || m;
+        modelMenu?.classList.remove('open');
+      });
+    });
+    window.addEventListener('click', () => modelMenu?.classList.remove('open'));
+
+    // Command Palette (Ctrl+K / Cmd+K)
+    const cmdBackdrop = document.getElementById('cmd-palette-backdrop');
+    const cmdInput = document.getElementById('cmd-palette-input');
+    const openCmd = document.getElementById('open-cmd-palette');
+
+    const showCmdPalette = () => {
+      if (cmdBackdrop) cmdBackdrop.style.display = 'flex';
+      if (cmdInput) {
+        cmdInput.value = '';
+        cmdInput.focus();
+      }
+    };
+    const hideCmdPalette = () => {
+      if (cmdBackdrop) cmdBackdrop.style.display = 'none';
+    };
+
+    openCmd?.addEventListener('click', showCmdPalette);
+    cmdBackdrop?.addEventListener('click', (e) => {
+      if (e.target === cmdBackdrop) hideCmdPalette();
+    });
+
+    document.querySelectorAll('.cmd-entry').forEach(entry => {
+      entry.addEventListener('click', () => {
+        const act = entry.dataset.action;
+        hideCmdPalette();
+        if (act === 'resources') this.resourceWatch.show();
+        else this.activatePanel(act);
+      });
+    });
+
+    cmdInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hideCmdPalette();
+      else if (e.key === 'Enter') {
+        const val = cmdInput.value.trim();
+        hideCmdPalette();
+        if (val) this.sendMessage(val);
+      }
+    });
+
+    // Window Controls
+    document.getElementById('win-min-btn')?.addEventListener('click', () => {
+      const sb = document.getElementById('history-sidebar');
+      sb?.classList.toggle('collapsed');
+    });
+    document.getElementById('win-max-btn')?.addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      else document.exitFullscreen().catch(() => {});
+    });
+    document.getElementById('win-close-btn')?.addEventListener('click', () => {
+      this.activatePanel('chat');
+    });
+
+    // Global Key Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        showCmdPalette();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        document.getElementById('history-sidebar')?.classList.toggle('collapsed');
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        this.resourceWatch.toggle();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === '1') {
+        e.preventDefault();
+        this.activatePanel('chat');
+      } else if ((e.ctrlKey || e.metaKey) && e.key === '2') {
+        e.preventDefault();
+        this.activatePanel('ide');
+      } else if ((e.ctrlKey || e.metaKey) && e.key === '3') {
+        e.preventDefault();
+        this.activatePanel('research');
+      }
+    });
+
+    // Settings save
+    document.getElementById('save-settings-keys-btn')?.addEventListener('click', () => this.saveSettings());
+  }
+
+  renderAttachedChips() {
+    const bar = document.getElementById('attached-files-bar');
+    if (!bar) return;
+    if (this.attachedFiles.length === 0) {
+      bar.style.display = 'none';
+      bar.innerHTML = '';
+      return;
+    }
+    bar.style.display = 'flex';
+    bar.innerHTML = this.attachedFiles.map((name, i) => `
+      <div class="attached-chip">
+        <i class="fa-solid fa-file"></i> <span>${name}</span>
+        <span class="remove-file" onclick="window.__removeChatFile(${i})">×</span>
+      </div>
+    `).join('');
+    window.__removeChatFile = (idx) => {
+      this.attachedFiles.splice(idx, 1);
+      this.renderAttachedChips();
+    };
+  }
+}
+
+// Instantiate on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+  const app = new MitchellStudioController();
+  app.init();
 });

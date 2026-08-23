@@ -3,487 +3,400 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mitchell · Grok & OLED Theme Engine — Complete UI Package</title>
-  <meta name="description" content="Mitchell AI complete Grok-themed design system: Studio, Orb, Menus, Cursor+Antigravity IDE, Command Palette, and all surfaces." />
+  <title>Mitchell AI — Command-Driven Autonomous Workspace</title>
+  <meta name="description" content="Mitchell AI: Command-driven autonomous intelligence, Grok aesthetics, Monaco IDE, Deep Researcher, Live MCP, and Isolated Project Workspaces." />
+  
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Monaco Editor Loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+
+  <!-- Core Styles -->
   <link rel="stylesheet" href="./css/studio.css" />
 </head>
-<body>
+<body class="theme-grok">
 
-  <!-- Theme / View chrome -->
-  <div class="theme-bar">
-    <label>Theme</label>
-    <button class="theme-chip active" data-theme="grok">Grok Carbon</button>
-    <button class="theme-chip" data-theme="oled">OLED Black</button>
-    <button class="theme-chip" data-theme="cyberpunk">Cyberpunk</button>
-    <button class="theme-chip" data-theme="solarized">Solarized</button>
-    <button class="theme-chip" data-theme="nordic">Nordic</button>
-    <button class="theme-chip" data-theme="lavender">Lavender Glass</button>
-    <div class="spacer"></div>
-    <div class="view-tabs">
-      <button class="view-tab active" data-view="studio">Studio</button>
-      <button class="view-tab" data-view="ide">IDE</button>
-      <button class="view-tab" data-view="orb">Orb</button>
-      <button class="view-tab" data-view="agents">Agents</button>
-      <button class="view-tab" data-view="research">Research</button>
-      <button class="view-tab" data-view="documents">Documents</button>
-      <button class="view-tab" data-view="memory">Memory</button>
-      <button class="view-tab" data-view="skills">Skills & MCP</button>
-      <button class="view-tab" data-view="settings">Settings</button>
-    </div>
-  </div>
+  <!-- Application Shell -->
+  <div class="app-root">
+    
+    <!-- Top System Window Titlebar -->
+    <header class="sys-titlebar" id="sys-titlebar">
+      <!-- Left: Brand Logo & Title -->
+      <div class="titlebar-left">
+        <button class="icon-btn" id="toggle-history-btn" title="Toggle Chat History (⌘B)">
+          <i class="fa-solid fa-bars-staggered"></i>
+        </button>
+        <div class="brand-badge" id="brand-home-btn" title="Home · Mitchell AI">
+          <div class="grok-icon-wrap">
+            <svg viewBox="0 0 100 100" class="grok-logo-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="7" />
+              <path d="M26 74L74 26" stroke="currentColor" stroke-width="8" stroke-linecap="round" />
+              <polygon points="50,15 67,31 50,47 33,31" fill="currentColor" fill-opacity="0.9" />
+              <polygon points="50,53 67,69 50,85 33,69" fill="currentColor" fill-opacity="0.9" />
+            </svg>
+          </div>
+          <span class="brand-name">Mitchell <span class="brand-sub">AI</span></span>
+        </div>
 
-  <div class="app-shell">
-    <!-- Activity Bar -->
-    <aside class="activity-bar">
-      <div class="activity-orb-mini" id="mini-orb-trigger" title="Mitchell Orb">M</div>
-      <button class="activity-btn active" data-panel="chat" title="Chat (⌘1)"><i class="fa-solid fa-message"></i></button>
-      <button class="activity-btn" data-panel="ide" title="MitchellIDE (⌘2)"><i class="fa-solid fa-code"></i></button>
-      <button class="activity-btn" data-panel="agents" title="Agent Floor (⌘3)"><i class="fa-solid fa-diagram-project"></i></button>
-      <button class="activity-btn" data-panel="research" title="Deep Research (⌘4)"><i class="fa-solid fa-magnifying-glass-chart"></i></button>
-      <button class="activity-btn" data-panel="documents" title="Documents (⌘5)"><i class="fa-solid fa-file-lines"></i></button>
-      <button class="activity-btn" data-panel="home" title="Smart Home IoT"><i class="fa-solid fa-house-signal"></i></button>
-      <button class="activity-btn" data-panel="workspace" title="Workspace Storage"><i class="fa-solid fa-folder-tree"></i></button>
-      <button class="activity-btn" data-panel="memory" title="Memory Graph"><i class="fa-solid fa-brain"></i></button>
-      <button class="activity-btn" data-panel="skills" title="Skills & MCP"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
-      <div class="activity-spacer"></div>
-      <button class="activity-btn" data-panel="settings" title="Settings & Keys"><i class="fa-solid fa-gear"></i></button>
-    </aside>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <span class="sidebar-title" id="sidebar-title">Explorer</span>
-        <div class="sidebar-actions" id="sidebar-actions">
-          <button class="sidebar-action-btn" id="sidebar-new-file" title="New File"><i class="fa-solid fa-plus"></i></button>
-          <button class="sidebar-action-btn" id="sidebar-refresh" title="Refresh"><i class="fa-solid fa-rotate"></i></button>
+        <div class="active-project-pill" id="active-project-badge" title="Active Project Workspace">
+          <i class="fa-solid fa-folder" style="color:var(--accent-blue)"></i>
+          <span id="active-project-name">Workspace: Root</span>
         </div>
       </div>
-      <div class="sidebar-body" id="sidebar-body">
-        <!-- Filled by JS per view -->
-      </div>
-    </aside>
 
-    <!-- Main -->
-    <div class="main-area">
-      <header class="topbar">
-        <button class="topbar-btn" id="toggle-sidebar" title="Toggle sidebar"><i class="fa-solid fa-bars"></i></button>
-        <div class="search-box" id="open-cmd">
+      <!-- Center: Quick Command Search Box -->
+      <div class="titlebar-center">
+        <div class="quick-cmd-box" id="open-cmd-palette">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search or run command... (Ctrl+K)" readonly />
+          <span class="cmd-box-text">Search or command ("open IDE", "show resources")...</span>
           <kbd>⌘K</kbd>
         </div>
-        <div class="model-pill" id="model-selector-pill" title="Model cascade">
-          <span class="dot"></span>
-          <span id="model-pill-label">Grok 3 · xAI</span>
-          <i class="fa-solid fa-chevron-down" style="font-size:9px;opacity:0.5"></i>
-        </div>
-        <div class="topbar-right">
-          <button class="action-btn" id="topbar-takeover-btn"><i class="fa-solid fa-hand-holding-hand"></i> Take Over</button>
-          <button class="action-btn" id="topbar-teach-btn"><i class="fa-solid fa-graduation-cap"></i> Teach Me</button>
-          <button class="action-btn primary" id="topbar-run-btn"><i class="fa-solid fa-play"></i> Run</button>
-          <div class="status-pill"><span class="pulse"></span> <span id="topbar-status-text">Connected</span></div>
-        </div>
-      </header>
-
-      <div class="panel-host">
-        <!-- Chat -->
-        <div class="panel active" id="panel-chat">
-          <div class="chat-layout">
-            <div class="chat-messages" id="chat-messages">
-              <div class="msg assistant">
-                <div class="msg-avatar"><i class="fa-solid fa-sparkles"></i></div>
-                <div class="msg-bubble">
-                  Welcome to <strong>Mitchell Studio</strong> — Grok-themed command center.<br>
-                  One Studio. One Orb. All agents under one roof.<br><br>
-                  I orchestrate browser, desktop, Android, WhatsApp MCP, and an agentic IDE (Cursor × Antigravity). Ask anything or open <code>⌘K</code>.
-                </div>
-              </div>
-              <div class="msg user">
-                <div class="msg-avatar"><i class="fa-solid fa-user"></i></div>
-                <div class="msg-bubble">Redesign the full UI as a proper IDE, Grok themed.</div>
-              </div>
-              <div class="msg assistant">
-                <div class="msg-avatar"><i class="fa-solid fa-sparkles"></i></div>
-                <div class="msg-bubble">
-                  Done. You're looking at the complete package: theme engine, activity bar, explorer, Cursor-style AI sidebar, terminal, orb states, and command palette. Switch themes and views from the top bar.
-                </div>
-              </div>
-            </div>
-            <div class="quick-chips">
-              <button class="chip" data-go="ide"><i class="fa-solid fa-code" style="color:var(--accent-cyan)"></i> Open IDE</button>
-              <button class="chip" data-go="agents"><i class="fa-solid fa-diagram-project" style="color:var(--accent-violet)"></i> Agent Floor</button>
-              <button class="chip" data-go="orb"><i class="fa-solid fa-circle-nodes" style="color:var(--accent-mint)"></i> Orb States</button>
-              <button class="chip" data-go="research"><i class="fa-solid fa-magnifying-glass-chart" style="color:var(--accent-amber)"></i> Deep Research</button>
-              <button class="chip" data-go="documents"><i class="fa-solid fa-file-lines" style="color:var(--accent-blue)"></i> Documents</button>
-              <button class="chip" data-go="memory"><i class="fa-solid fa-brain" style="color:var(--accent-purple)"></i> Memory Graph</button>
-              <button class="chip" data-go="skills"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent-green)"></i> MCP Hub</button>
-              <button class="chip" data-action="takeover"><i class="fa-solid fa-hand-holding-hand" style="color:var(--accent-rose)"></i> Take Over</button>
-            </div>
-            <div class="chat-input-bar">
-              <div class="chat-input-wrap">
-                <textarea rows="1" placeholder="Message Mitchell…" id="chat-input"></textarea>
-                <button class="voice-btn" id="chat-voice" title="Voice"><i class="fa-solid fa-microphone"></i></button>
-                <button class="send-btn" id="chat-send" title="Send"><i class="fa-solid fa-arrow-up"></i></button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- IDE -->
-        <div class="panel" id="panel-ide">
-          <div class="ide-layout">
-            <div class="ide-editor-zone">
-              <div class="ide-tabs" id="ide-tabs-bar">
-                <div class="ide-tab active" data-file="mitchell/manager/loop.py"><i class="fa-brands fa-python" style="color:#4ade80;font-size:11px"></i> manager.py <span class="close">×</span></div>
-                <div class="ide-tab" data-file="docs/studio/js/studio.js"><i class="fa-brands fa-js" style="color:#fbbf24;font-size:11px"></i> studio.js <span class="close">×</span></div>
-                <div class="ide-tab" data-file="docs/studio/css/studio.css"><i class="fa-solid fa-file-code" style="color:var(--accent-cyan);font-size:11px"></i> theme.html <span class="close">×</span></div>
-              </div>
-              <div class="ide-editor" id="ide-editor-container">
-                <div class="editor-gutter" id="editor-gutter">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18</div>
-                <pre class="editor-code" id="editor-code" contenteditable="true" spellcheck="false"><span class="cm"># Mitchell Manager — Karpathy rigor</span>
-<span class="kw">from</span> mitchell.hive <span class="kw">import</span> blackboard
-<span class="kw">from</span> mitchell.core.providers <span class="kw">import</span> provider_registry
-<span class="kw">from</span> mitchell.mcp <span class="kw">import</span> mcp_tool_adapter
-
-<span class="kw">class</span> <span class="cls">Manager</span>:
-    <span class="cm">"""Goal-driven orchestrator for the multi-agent hive."""</span>
-
-    <span class="kw">def</span> <span class="fn">__init__</span>(self):
-        self.providers = provider_registry
-        self.blackboard = blackboard
-
-    <span class="kw">def</span> <span class="fn">receive</span>(self, message: <span class="cls">str</span>) -> <span class="cls">str</span>:
-        <span class="cm"># Think before acting</span>
-        plan = self.<span class="fn">_decompose</span>(message)
-        <span class="kw">return</span> self.<span class="fn">_execute</span>(plan)</pre>
-              </div>
-              <div class="ide-bottom">
-                <div class="ide-bottom-tabs">
-                  <button class="ide-bottom-tab active" data-bottom-tab="terminal">Terminal</button>
-                  <button class="ide-bottom-tab" data-bottom-tab="problems">Problems</button>
-                  <button class="ide-bottom-tab" data-bottom-tab="output">Output</button>
-                  <button class="ide-bottom-tab" data-bottom-tab="git">Git</button>
-                </div>
-                <div class="ide-terminal" id="ide-terminal-output">
-                  <div><span class="t-prompt">mitchell@studio</span> <span class="t-dim">~</span> <span class="t-cyan">$</span> python -m mitchell.cli studio</div>
-                  <div class="t-green">✓ Studio listening on http://localhost:8500</div>
-                  <div class="t-dim">  WebSocket stream active · 12 agents registered · MCP stdio online</div>
-                  <div class="terminal-input-line">
-                    <span class="t-prompt">mitchell@studio</span> <span class="t-dim">~</span> <span class="t-cyan">$</span>
-                    <input type="text" class="terminal-input" id="terminal-cli-input" placeholder="Type command..." />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <aside class="ide-ai">
-              <div class="ide-ai-header">
-                <i class="fa-solid fa-sparkles" style="color:var(--accent-violet)"></i>
-                Agent
-                <span class="mode">Composer</span>
-              </div>
-              <div class="ide-ai-messages" id="composer-messages">
-                <div class="ai-msg">
-                  <div class="label">Mitchell</div>
-                  I'll refactor <code>Manager.receive</code> to stream tokens and attach cost tracking. Applying surgical change:
-                  <div class="ai-diff">
-                    <div class="diff-h">manager.py</div>
-                    <div class="del">-        return self._execute(plan)</div>
-                    <div class="add">+        result = self._execute(plan)</div>
-                    <div class="add">+        cost_tracker.record(result)</div>
-                    <div class="add">+        return result.stream()</div>
-                  </div>
-                </div>
-                <div class="ai-msg user">
-                  <div class="label">You</div>
-                  Yes — keep it surgical, no drive-by refactors.
-                </div>
-              </div>
-              <div class="ide-ai-input">
-                <textarea id="composer-input" placeholder="Edit, ask, or @ mention files…"></textarea>
-                <div class="ide-ai-actions">
-                  <button id="composer-accept-btn">Accept</button>
-                  <button id="composer-reject-btn">Reject</button>
-                  <button class="primary" id="composer-apply-btn">Apply</button>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-
-        <!-- Orb -->
-        <div class="panel" id="panel-orb">
-          <div class="orb-stage">
-            <div class="orb-title">The Orb · Living Interface</div>
-            <div class="orb-wrap">
-              <div class="orb idle" id="main-orb">
-                <div class="orb-ring outer"></div>
-                <div class="orb-ring mid"></div>
-                <div class="orb-core">
-                  <div class="orb-glow"></div>
-                  <span class="orb-letter">M</span>
-                </div>
-              </div>
-            </div>
-            <div class="orb-states">
-              <button class="orb-state-btn active" data-state="idle">Idle</button>
-              <button class="orb-state-btn" data-state="listening">Listening</button>
-              <button class="orb-state-btn" data-state="thinking">Thinking</button>
-              <button class="orb-state-btn" data-state="speaking">Speaking</button>
-              <button class="orb-state-btn" data-state="working">Working</button>
-              <button class="orb-state-btn" data-state="error">Error</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Agents -->
-        <div class="panel" id="panel-agents">
-          <div class="agents-grid" id="agents-grid-container">
-            <div class="agent-card">
-              <div class="agent-card-h">
-                <div class="agent-icon" style="color:var(--accent-cyan)"><i class="fa-solid fa-globe"></i></div>
-                <div><div class="agent-name">Browser Worker</div><div class="agent-role">Playwright · Stealth</div></div>
-                <span class="agent-status busy">Busy</span>
-              </div>
-              <p class="agent-desc">Human-bezier mouse, captcha bypass, multi-tab research.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-card-h">
-                <div class="agent-icon" style="color:var(--accent-violet)"><i class="fa-solid fa-desktop"></i></div>
-                <div><div class="agent-name">Windows Worker</div><div class="agent-role">UIA · Win32</div></div>
-                <span class="agent-status idle">Idle</span>
-              </div>
-              <p class="agent-desc">Native desktop automation and screen grounding.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-card-h">
-                <div class="agent-icon" style="color:var(--accent-mint)"><i class="fa-solid fa-mobile-screen"></i></div>
-                <div><div class="agent-name">Android Worker</div><div class="agent-role">ADB · scrcpy</div></div>
-                <span class="agent-status idle">Idle</span>
-              </div>
-              <p class="agent-desc">Wireless control, touch injection, app flows.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-card-h">
-                <div class="agent-icon" style="color:var(--accent-amber)"><i class="fa-solid fa-code"></i></div>
-                <div><div class="agent-name">IDE Worker</div><div class="agent-role">Editor · Git · Pytest</div></div>
-                <span class="agent-status think">Thinking</span>
-              </div>
-              <p class="agent-desc">Agentic edits, diffs, terminal, conventional commits.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-card-h">
-                <div class="agent-icon" style="color:var(--accent-green)"><i class="fa-brands fa-whatsapp"></i></div>
-                <div><div class="agent-name">Comms Worker</div><div class="agent-role">WhatsApp MCP</div></div>
-                <span class="agent-status idle">Idle</span>
-              </div>
-              <p class="agent-desc">Unified inbox, scheduled messages, media.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-card-h">
-                <div class="agent-icon" style="color:var(--accent-rose)"><i class="fa-solid fa-house-signal"></i></div>
-                <div><div class="agent-name">IoT Worker</div><div class="agent-role">Home Assistant</div></div>
-                <span class="agent-status idle">Idle</span>
-              </div>
-              <p class="agent-desc">Lights, climate, scenes, presence automation.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Research -->
-        <div class="panel" id="panel-research">
-          <div class="research-container">
-            <div class="research-hero">
-              <div class="research-input-box">
-                <i class="fa-solid fa-magnifying-glass" style="color:var(--accent-cyan)"></i>
-                <input type="text" id="research-query-input" placeholder="Enter research question..." />
-              </div>
-              <button class="action-btn primary" id="research-run-btn"><i class="fa-solid fa-bolt"></i> Research</button>
-            </div>
-            <div id="research-results-container">
-              <div class="empty-state"><i class="fa-solid fa-magnifying-glass-chart"></i><h3>Deep Research</h3><p>Perplexity-style multi-source web search & citations.</p></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Documents -->
-        <div class="panel" id="panel-documents">
-          <div id="documents-content" style="height:100%;"></div>
-        </div>
-
-        <!-- Smart Home -->
-        <div class="panel" id="panel-home">
-          <div id="home-content"></div>
-        </div>
-
-        <!-- Workspace -->
-        <div class="panel" id="panel-workspace">
-          <div class="settings-container">
-            <div class="settings-group">
-              <div class="settings-group-title"><i class="fa-solid fa-folder-tree"></i> Native Workspace Storage</div>
-              <div id="workspace-content">
-                <div class="empty-state"><i class="fa-solid fa-folder-tree"></i><h3>Workspace</h3><p>Docs, sheets, notes, kanban — native storage.</p></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Memory -->
-        <div class="panel" id="panel-memory">
-          <div class="memory-layout">
-            <div class="memory-canvas-wrap">
-              <div style="padding:10px 14px;border-bottom:1px solid var(--glass-border);font-weight:600;font-size:12px;display:flex;justify-content:space-between;">
-                <span><i class="fa-solid fa-brain" style="color:var(--accent-cyan)"></i> Knowledge Triples & Self-Model Graph</span>
-                <span class="t-dim">Physics Visualizer</span>
-              </div>
-              <canvas id="memory-canvas" width="600" height="420"></canvas>
-            </div>
-            <div class="memory-metrics-pane">
-              <div class="metric-card">
-                <div class="metric-title">Self-Model Confidence</div>
-                <div class="metric-value" style="color:var(--accent-mint)">96.4%</div>
-                <div class="metric-bar"><div class="metric-bar-fill" style="width:96.4%"></div></div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-title">Episodic Memories</div>
-                <div class="metric-value">1,428</div>
-                <div class="metric-bar"><div class="metric-bar-fill" style="width:82%;background:var(--accent-violet)"></div></div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-title">Semantic Fact Triples</div>
-                <div class="metric-value">3,892</div>
-                <div class="metric-bar"><div class="metric-bar-fill" style="width:91%;background:var(--accent-amber)"></div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Skills & MCP -->
-        <div class="panel" id="panel-skills">
-          <div class="settings-container">
-            <div class="settings-group">
-              <div class="settings-group-title" style="justify-content:space-between;">
-                <span><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent-cyan)"></i> Model Context Protocol (MCP) Catalog</span>
-                <button class="action-btn" id="mcp-custom-add-btn"><i class="fa-solid fa-plus"></i> Add MCP</button>
-              </div>
-              <div class="mcp-grid" id="mcp-catalog-grid"></div>
-            </div>
-
-            <div class="settings-group">
-              <div class="settings-group-title"><i class="fa-solid fa-book" style="color:var(--accent-violet)"></i> Procedural Skills (SKILL.md)</div>
-              <div id="skills-catalog-list"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Settings -->
-        <div class="panel" id="panel-settings">
-          <div class="settings-container">
-            <div class="settings-group">
-              <div class="settings-group-title"><i class="fa-solid fa-key" style="color:var(--accent-cyan)"></i> Model Provider API Keys</div>
-              <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Keys are stored in your local <code>.env</code> file.</p>
-
-              <div class="key-input-row">
-                <label>xAI Grok Key</label>
-                <input type="password" id="key-xai" placeholder="xai-..." />
-                <span class="key-status-dot" id="dot-xai"></span>
-              </div>
-              <div class="key-input-row">
-                <label>Anthropic Key</label>
-                <input type="password" id="key-anthropic" placeholder="sk-ant-..." />
-                <span class="key-status-dot" id="dot-anthropic"></span>
-              </div>
-              <div class="key-input-row">
-                <label>OpenAI Key</label>
-                <input type="password" id="key-openai" placeholder="sk-..." />
-                <span class="key-status-dot" id="dot-openai"></span>
-              </div>
-              <div class="key-input-row">
-                <label>Gemini Key</label>
-                <input type="password" id="key-gemini" placeholder="AIzaSy..." />
-                <span class="key-status-dot" id="dot-gemini"></span>
-              </div>
-              <div class="key-input-row">
-                <label>Groq Key</label>
-                <input type="password" id="key-groq" placeholder="gsk_..." />
-                <span class="key-status-dot" id="dot-groq"></span>
-              </div>
-              <div class="key-input-row">
-                <label>DeepSeek Key</label>
-                <input type="password" id="key-deepseek" placeholder="sk-..." />
-                <span class="key-status-dot" id="dot-deepseek"></span>
-              </div>
-              <div class="key-input-row">
-                <label>Home Assistant URL</label>
-                <input type="text" id="key-ha-url" placeholder="http://192.168.1.100:8123" />
-                <span class="key-status-dot" id="dot-ha"></span>
-              </div>
-              <div class="key-input-row">
-                <label>Home Assistant Token</label>
-                <input type="password" id="key-ha-token" placeholder="Bearer Token..." />
-              </div>
-
-              <div style="display:flex;gap:10px;margin-top:16px;">
-                <button class="action-btn primary" id="save-keys-btn"><i class="fa-solid fa-floppy-disk"></i> Save Keys</button>
-                <span id="keys-status-msg" style="font-size:12px;color:var(--accent-mint);display:flex;align-items:center;"></span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <footer class="status-bar">
-        <span class="live" id="ws-status-bar">● Connected</span>
-        <span class="sep"></span>
-        <span id="status-agent-count">12 agents</span>
-        <span class="sep"></span>
-        <span id="status-cost-count">₹0.04 · 8.4k tokens</span>
-        <div class="right">
-          <span>UTF-8</span>
-          <span>Python 3.12</span>
-          <span>main*</span>
-          <span id="cursor-pos">Ln 14, Col 22</span>
+      <!-- Right: Model Selector, Quick Summons, Window Controls -->
+      <div class="titlebar-right">
+        <!-- Model Selector Dropdown Trigger -->
+        <div class="model-dropdown-wrap">
+          <button class="model-pill-btn" id="model-selector-btn" title="Switch Intelligence Model">
+            <span class="model-dot"></span>
+            <span id="current-model-label">Fast · Grok 3 Mini</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:10px;opacity:0.6"></i>
+          </button>
+          <div class="model-dropdown-menu" id="model-dropdown-menu">
+            <div class="model-menu-item active" data-model="grok-3-mini">
+              <div class="model-item-title"><i class="fa-solid fa-bolt" style="color:var(--accent-mint)"></i> Fast · Grok 3 Mini</div>
+              <div class="model-item-desc">Ultra-low latency, real-time command routing</div>
+            </div>
+            <div class="model-menu-item" data-model="claude-3-7-sonnet">
+              <div class="model-item-title"><i class="fa-solid fa-brain" style="color:var(--accent-violet)"></i> Think · Claude 3.7 Sonnet</div>
+              <div class="model-item-desc">Deep reasoning, full code generation & refactoring</div>
+            </div>
+            <div class="model-menu-item" data-model="grok-3-reason">
+              <div class="model-item-title"><i class="fa-solid fa-atom" style="color:var(--accent-cyan)"></i> Deep · Grok 3 Reason</div>
+              <div class="model-item-desc">Complex mathematical & architectural planning</div>
+            </div>
+            <div class="model-menu-item" data-model="o3-mini">
+              <div class="model-item-title"><i class="fa-solid fa-microchip" style="color:var(--accent-amber)"></i> Pro · OpenAI o3-mini</div>
+              <div class="model-item-desc">Deterministic multi-step logic & validation</div>
+            </div>
+          </div>
         </div>
-      </footer>
+
+        <!-- Quick Summon Buttons -->
+        <div class="quick-summons">
+          <button class="summon-btn" id="summon-ide-btn" title="Summon IDE (⌘2)">
+            <i class="fa-solid fa-code"></i> <span>IDE</span>
+          </button>
+          <button class="summon-btn" id="summon-researcher-btn" title="Summon Researcher (⌘3)">
+            <i class="fa-solid fa-magnifying-glass-chart"></i> <span>Research</span>
+          </button>
+          <button class="summon-btn" id="summon-resources-btn" title="Show Resource Watch HUD">
+            <i class="fa-solid fa-gauge-high"></i> <span>Resources</span>
+          </button>
+        </div>
+
+        <!-- Window Controls -->
+        <div class="window-controls">
+          <button class="win-btn" id="win-min-btn" title="Minimize"><i class="fa-solid fa-minus"></i></button>
+          <button class="win-btn" id="win-max-btn" title="Maximize / Restore"><i class="fa-regular fa-square"></i></button>
+          <button class="win-btn win-close" id="win-close-btn" title="Close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <div class="workspace-body">
+      
+      <!-- Collapsible Chat History Sidebar -->
+      <aside class="history-sidebar" id="history-sidebar">
+        <div class="history-header">
+          <button class="new-chat-btn" id="new-chat-btn" title="Start New Chat">
+            <i class="fa-solid fa-plus"></i> New Chat
+          </button>
+        </div>
+        
+        <div class="history-search-wrap">
+          <i class="fa-solid fa-magnifying-glass history-search-icon"></i>
+          <input type="text" id="history-search-input" placeholder="Search conversations..." />
+        </div>
+
+        <div class="history-scroll" id="history-scroll">
+          <div class="history-group">
+            <div class="history-group-title">Today</div>
+            <div class="history-items" id="history-group-today">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div class="history-group">
+            <div class="history-group-title">Yesterday</div>
+            <div class="history-items" id="history-group-yesterday">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div class="history-group">
+            <div class="history-group-title">Previous 7 Days</div>
+            <div class="history-items" id="history-group-week">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <div class="history-footer">
+          <button class="footer-nav-btn" id="nav-projects-btn"><i class="fa-solid fa-layer-group"></i> Projects</button>
+          <button class="footer-nav-btn" id="nav-skills-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Skills & MCP</button>
+          <button class="footer-nav-btn" id="nav-files-btn"><i class="fa-solid fa-folder-tree"></i> Files</button>
+          <button class="footer-nav-btn" id="nav-devices-btn"><i class="fa-solid fa-mobile-screen"></i> Devices</button>
+          <button class="footer-nav-btn" id="nav-settings-btn"><i class="fa-solid fa-gear"></i> Settings</button>
+        </div>
+      </aside>
+
+      <!-- Main Panels Host -->
+      <main class="panels-host" id="panels-host">
+        
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- PANEL 1: MAIN CHAT (DEFAULT HOME)                                    -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section class="panel active" id="panel-chat">
+          <div class="chat-viewport">
+            
+            <!-- Chat Hero (shown when starting a fresh session) -->
+            <div class="chat-hero-section" id="chat-hero">
+              <div class="hero-grok-logo">
+                <svg viewBox="0 0 100 100" class="hero-logo-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="5" />
+                  <path d="M26 74L74 26" stroke="currentColor" stroke-width="6" stroke-linecap="round" />
+                  <polygon points="50,15 67,31 50,47 33,31" fill="currentColor" fill-opacity="0.95" />
+                  <polygon points="50,53 67,69 50,85 33,69" fill="currentColor" fill-opacity="0.95" />
+                </svg>
+              </div>
+              <h1 class="hero-title">Mitchell AI</h1>
+              <p class="hero-subtitle">Command-driven autonomous intelligence. Chat is home. Everything else is summoned.</p>
+              
+              <!-- Quick Prompt Summon Chips -->
+              <div class="hero-quick-chips">
+                <button class="chip-cmd" data-cmd="open IDE"><i class="fa-solid fa-code" style="color:var(--accent-cyan)"></i> "open IDE"</button>
+                <button class="chip-cmd" data-cmd="open researcher"><i class="fa-solid fa-magnifying-glass-chart" style="color:var(--accent-violet)"></i> "open researcher"</button>
+                <button class="chip-cmd" data-cmd="show resources"><i class="fa-solid fa-gauge-high" style="color:var(--accent-mint)"></i> "show resources"</button>
+                <button class="chip-cmd" data-cmd="show devices"><i class="fa-solid fa-mobile-screen" style="color:var(--accent-amber)"></i> "show devices"</button>
+                <button class="chip-cmd" data-cmd="open project"><i class="fa-solid fa-layer-group" style="color:var(--accent-blue)"></i> "open projects"</button>
+                <button class="chip-cmd" data-cmd="Mitchell install @modelcontextprotocol/server-postgres"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent-rose)"></i> "install MCP"</button>
+              </div>
+            </div>
+
+            <!-- Chat Stream Area -->
+            <div class="chat-messages-stream" id="chat-messages-stream">
+              <!-- Dynamically populated with chat bubbles -->
+            </div>
+
+            <!-- Attached Files Preview Bar -->
+            <div class="attached-files-bar" id="attached-files-bar" style="display:none;"></div>
+
+            <!-- Bottom Floating Chat Input -->
+            <div class="chat-input-container">
+              <div class="chat-input-box" id="chat-input-box">
+                <!-- File Attachment Button -->
+                <input type="file" id="chat-file-input" multiple style="display:none;" />
+                <button class="input-action-btn" id="chat-attach-btn" title="Attach file (PDF, Doc, Image, Code)">
+                  <i class="fa-solid fa-paperclip"></i>
+                </button>
+
+                <!-- Prompt Textarea -->
+                <textarea id="chat-prompt-input" rows="1" placeholder="Ask Mitchell or command: 'open IDE', 'deep research...', 'show resources'..." spellcheck="false"></textarea>
+
+                <!-- Voice Button -->
+                <button class="input-action-btn voice-btn" id="chat-voice-btn" title="Voice Dictation">
+                  <i class="fa-solid fa-microphone"></i>
+                </button>
+
+                <!-- Send Button -->
+                <button class="send-btn" id="chat-send-btn" title="Send Message (Enter)">
+                  <i class="fa-solid fa-arrow-up"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- PANEL 2: IDE MODE (ANTIGRAVITY IDE 3-PANE LAYOUT)                  -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-ide">
+          <div class="ide-container" id="ide-container">
+            <!-- Rendered by MitchellIDE component -->
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- PANEL 3: RESEARCHER (PERPLEXITY EXPERIENCE)                         -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-research">
+          <div class="research-container" id="research-container">
+            <!-- Rendered by DeepResearchStudio component -->
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- PANEL 4: SKILLS & CONNECTORS + REAL-TIME MCP                       -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-skills">
+          <div class="skills-container" id="skills-container">
+            <!-- Rendered by SkillsMCPStudio component -->
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- PANEL 5: ISOLATED PROJECTS WORKSPACE                               -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-projects">
+          <div class="projects-container" id="projects-container">
+            <!-- Rendered by ProjectsStudio component -->
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- PANEL 6: DEVICES & SMART HOME                                      -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-devices">
+          <div class="devices-container" id="devices-container">
+            <!-- Rendered by DevicesStudio component -->
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- PANEL 7: LIGHTWEIGHT FILE EXPLORER                                 -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-files">
+          <div class="file-explorer-container" id="file-explorer-container">
+            <!-- Rendered by FileExplorerStudio component -->
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- PANEL 8: SETTINGS & API KEYS                                       -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-settings">
+          <div class="settings-viewport" id="settings-viewport">
+            <div class="settings-card">
+              <div class="settings-title"><i class="fa-solid fa-key" style="color:var(--accent-cyan)"></i> Model Provider API Keys</div>
+              <p class="settings-desc">API keys are securely persisted to your local <code>.env</code> file.</p>
+              
+              <div class="settings-form">
+                <div class="setting-row">
+                  <label>xAI Grok API Key</label>
+                  <input type="password" id="key-xai" placeholder="xai-..." autocomplete="off" />
+                  <span class="key-indicator" id="dot-xai"></span>
+                </div>
+                <div class="setting-row">
+                  <label>Anthropic Claude API Key</label>
+                  <input type="password" id="key-anthropic" placeholder="sk-ant-..." autocomplete="off" />
+                  <span class="key-indicator" id="dot-anthropic"></span>
+                </div>
+                <div class="setting-row">
+                  <label>OpenAI API Key</label>
+                  <input type="password" id="key-openai" placeholder="sk-..." autocomplete="off" />
+                  <span class="key-indicator" id="dot-openai"></span>
+                </div>
+                <div class="setting-row">
+                  <label>Google Gemini API Key</label>
+                  <input type="password" id="key-gemini" placeholder="AIzaSy..." autocomplete="off" />
+                  <span class="key-indicator" id="dot-gemini"></span>
+                </div>
+                <div class="setting-row">
+                  <label>Groq API Key</label>
+                  <input type="password" id="key-groq" placeholder="gsk_..." autocomplete="off" />
+                  <span class="key-indicator" id="dot-groq"></span>
+                </div>
+                <div class="setting-row">
+                  <label>DeepSeek API Key</label>
+                  <input type="password" id="key-deepseek" placeholder="sk-..." autocomplete="off" />
+                  <span class="key-indicator" id="dot-deepseek"></span>
+                </div>
+                <div class="setting-row">
+                  <label>Home Assistant URL</label>
+                  <input type="text" id="key-ha-url" placeholder="http://192.168.1.100:8123" />
+                  <span class="key-indicator" id="dot-ha"></span>
+                </div>
+                <div class="setting-row">
+                  <label>Home Assistant Long-Lived Token</label>
+                  <input type="password" id="key-ha-token" placeholder="Bearer eyJ..." autocomplete="off" />
+                </div>
+                
+                <div class="settings-actions">
+                  <button class="btn btn-primary" id="save-settings-keys-btn">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Configuration
+                  </button>
+                  <span id="save-keys-status" class="status-badge-inline"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
     </div>
-  </div>
 
-  <!-- Command Palette -->
-  <div class="cmd-overlay" id="cmd-overlay">
-    <div class="cmd-palette">
-      <div class="cmd-input-row">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="cmd-input" placeholder="Type a command or search…" autocomplete="off" />
-        <kbd>ESC</kbd>
+    <!-- Status Bar (Bottom) -->
+    <footer class="sys-statusbar">
+      <div class="statusbar-left">
+        <span class="status-indicator online" id="ws-status-dot"></span>
+        <span id="ws-status-label">Connected to Hive</span>
+        <span class="status-sep">|</span>
+        <span id="status-model-name"><i class="fa-solid fa-microchip"></i> Grok 3</span>
+        <span class="status-sep">|</span>
+        <span id="status-agent-active"><i class="fa-solid fa-diagram-project"></i> 12 Agents Active</span>
       </div>
-      <div class="cmd-list">
-        <div class="cmd-item focused" data-act="chat"><i class="fa-solid fa-message"></i><div><div class="cmd-label">Open Chat</div><div class="cmd-desc">Unified conversation</div></div><kbd>⌘1</kbd></div>
-        <div class="cmd-item" data-act="ide"><i class="fa-solid fa-code"></i><div><div class="cmd-label">Open MitchellIDE</div><div class="cmd-desc">Cursor × Antigravity editor</div></div><kbd>⌘2</kbd></div>
-        <div class="cmd-item" data-act="agents"><i class="fa-solid fa-diagram-project"></i><div><div class="cmd-label">Agent Floor</div><div class="cmd-desc">Hive status & dispatch</div></div><kbd>⌘3</kbd></div>
-        <div class="cmd-item" data-act="research"><i class="fa-solid fa-magnifying-glass-chart"></i><div><div class="cmd-label">Deep Research</div><div class="cmd-desc">Perplexity-style search</div></div><kbd>⌘4</kbd></div>
-        <div class="cmd-item" data-act="documents"><i class="fa-solid fa-file-lines"></i><div><div class="cmd-label">Documents</div><div class="cmd-desc">Markdown workspace</div></div><kbd>⌘5</kbd></div>
-        <div class="cmd-item" data-act="orb"><i class="fa-solid fa-circle-nodes"></i><div><div class="cmd-label">Orb Interface</div><div class="cmd-desc">Living state avatar</div></div></div>
-        <div class="cmd-item" data-act="memory"><i class="fa-solid fa-brain"></i><div><div class="cmd-label">Memory Graph</div><div class="cmd-desc">Knowledge triples</div></div></div>
-        <div class="cmd-item" data-act="skills"><i class="fa-solid fa-wand-magic-sparkles"></i><div><div class="cmd-label">Skills & MCP</div><div class="cmd-desc">Manage MCP servers</div></div></div>
-        <div class="cmd-item" data-act="takeover"><i class="fa-solid fa-hand-holding-hand"></i><div><div class="cmd-label">Take Over</div><div class="cmd-desc">Hand project to Mitchell</div></div></div>
+      <div class="statusbar-right">
+        <span id="status-cost-summary">₹0.00 · 0 tokens</span>
+        <span class="status-sep">|</span>
+        <span id="status-active-file-lang">Python 3.12</span>
+        <span class="status-sep">|</span>
+        <button class="status-btn" id="status-theme-toggle" title="Toggle OLED Theme"><i class="fa-solid fa-palette"></i></button>
+      </div>
+    </footer>
+
+    <!-- ═════════════════════════════════════════════════════════════════════ -->
+    <!-- FLOATING RESOURCE WATCH HUD OVERLAY (COMMAND-SUMMONED)               -->
+    <!-- ═════════════════════════════════════════════════════════════════════ -->
+    <div class="resource-hud-overlay" id="resource-hud-overlay" style="display:none;">
+      <!-- Populated by ResourceWatchStudio component -->
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════════════════ -->
+    <!-- GLOBAL COMMAND PALETTE (CTRL+K / CMD+K)                              -->
+    <!-- ═════════════════════════════════════════════════════════════════════ -->
+    <div class="cmd-palette-backdrop" id="cmd-palette-backdrop" style="display:none;">
+      <div class="cmd-palette-modal">
+        <div class="cmd-search-header">
+          <i class="fa-solid fa-terminal"></i>
+          <input type="text" id="cmd-palette-input" placeholder="Type a command or summon workspace..." autocomplete="off" />
+          <kbd>ESC</kbd>
+        </div>
+        <div class="cmd-results-list" id="cmd-results-list">
+          <div class="cmd-entry selected" data-action="chat"><i class="fa-solid fa-message"></i><div><div class="cmd-entry-title">Home · Chat</div><div class="cmd-entry-sub">Unified conversation and command home</div></div><kbd>⌘1</kbd></div>
+          <div class="cmd-entry" data-action="ide"><i class="fa-solid fa-code"></i><div><div class="cmd-entry-title">Summon IDE</div><div class="cmd-entry-sub">Monaco editor, file tree, terminal & AI composer</div></div><kbd>⌘2</kbd></div>
+          <div class="cmd-entry" data-action="research"><i class="fa-solid fa-magnifying-glass-chart"></i><div><div class="cmd-entry-title">Summon Researcher</div><div class="cmd-entry-sub">Perplexity-grade deep multi-source research</div></div><kbd>⌘3</kbd></div>
+          <div class="cmd-entry" data-action="resources"><i class="fa-solid fa-gauge-high"></i><div><div class="cmd-entry-title">Show Resource Watch HUD</div><div class="cmd-entry-sub">Floating live hardware telemetry & gauges</div></div><kbd>⌘R</kbd></div>
+          <div class="cmd-entry" data-action="skills"><i class="fa-solid fa-wand-magic-sparkles"></i><div><div class="cmd-entry-title">Skills & MCP Hub</div><div class="cmd-entry-sub">Manage procedural skills, connectors & live MCP</div></div><kbd>⌘4</kbd></div>
+          <div class="cmd-entry" data-action="projects"><i class="fa-solid fa-layer-group"></i><div><div class="cmd-entry-title">Isolated Projects</div><div class="cmd-entry-sub">Independent workspaces with memory isolation</div></div><kbd>⌘5</kbd></div>
+          <div class="cmd-entry" data-action="devices"><i class="fa-solid fa-mobile-screen"></i><div><div class="cmd-entry-title">Show Devices</div><div class="cmd-entry-sub">Android, Windows desktop & Home Assistant IoT</div></div></div>
+          <div class="cmd-entry" data-action="files"><i class="fa-solid fa-folder-tree"></i><div><div class="cmd-entry-title">File Explorer</div><div class="cmd-entry-sub">Lightweight filesystem navigation & search</div></div></div>
+          <div class="cmd-entry" data-action="settings"><i class="fa-solid fa-gear"></i><div><div class="cmd-entry-title">Settings & API Keys</div><div class="cmd-entry-sub">Manage model providers & environment</div></div></div>
+        </div>
       </div>
     </div>
+
   </div>
 
-  <!-- Context menu demo -->
-  <div class="ctx-menu" id="ctx-menu">
-    <div class="ctx-item" id="ctx-run"><i class="fa-solid fa-play"></i> Run Selection</div>
-    <div class="ctx-item" id="ctx-ask"><i class="fa-solid fa-wand-magic-sparkles"></i> Ask Mitchell</div>
-    <div class="ctx-sep"></div>
-    <div class="ctx-item" id="ctx-copy"><i class="fa-solid fa-copy"></i> Copy</div>
-    <div class="ctx-item" id="ctx-paste"><i class="fa-solid fa-paste"></i> Paste</div>
-    <div class="ctx-sep"></div>
-    <div class="ctx-item" id="ctx-git"><i class="fa-solid fa-code-branch"></i> Git · Stage</div>
-  </div>
-
-  <script src="./js/studio.js" type="module"></script>
+  <!-- Core Javascript Application Modules -->
+  <script type="module" src="./js/studio.js"></script>
 </body>
 </html>
