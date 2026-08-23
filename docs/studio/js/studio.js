@@ -167,7 +167,41 @@ class MitchellStudioController {
       };
     }
 
-    // 7. Find Document / Files
+    // 7. Spawn Dynamic Agent (Hermes Swarm)
+    if (lower.startsWith('spawn agent') || lower.startsWith('create agent') || lower.startsWith('spawn dynamic agent')) {
+      const aName = raw.replace(/spawn dynamic agent|spawn agent|create agent/i, '').trim() || 'CustomWorker';
+      fetch('/api/agents/dynamic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'spawn', name: aName, description: `Autonomous subagent '${aName}'`, model: this.activeModel }),
+      }).then(() => {
+        if (this.skillsComponent) this.skillsComponent.loadData();
+      });
+      this.activatePanel('skills');
+      return {
+        handled: true,
+        response: `Spawning dynamic Hermes autonomous subagent: \`${aName}\` with full tool execution & ReAct loop!`
+      };
+    }
+
+    // 8. Create / Install Skill
+    if (lower.startsWith('create skill') || lower.startsWith('install skill')) {
+      const sName = raw.replace(/create skill|install skill/i, '').trim() || 'custom_skill';
+      fetch('/api/skills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', name: sName, description: `Procedural skill ${sName}` }),
+      }).then(() => {
+        if (this.skillsComponent) this.skillsComponent.loadData();
+      });
+      this.activatePanel('skills');
+      return {
+        handled: true,
+        response: `Registering procedural skill \`${sName}\` in Skill Library...`
+      };
+    }
+
+    // 9. Find Document / Files
     if (lower.includes('find document') || lower.includes('find file') || lower.includes('search file')) {
       const q = raw.split(/contains|that|for/i).pop().trim();
       this.activatePanel('files', { query: q });
@@ -177,7 +211,7 @@ class MitchellStudioController {
       };
     }
 
-    // 8. Open API Keys / .env
+    // 10. Open API Keys / .env
     if ((lower.includes('api keys') || lower.includes('.env')) && lower.includes('file')) {
       this.activatePanel('ide', { file: '.env' });
       return {
@@ -520,6 +554,11 @@ class MitchellStudioController {
           if (data.type === 'cost' && data.cost) {
             const costElem = document.getElementById('status-cost-summary');
             if (costElem) costElem.textContent = `${data.cost.currency || '₹'}${data.cost.total_cost || '0.00'} · ${data.cost.total_tokens || 0} tokens`;
+          } else if (data.type === 'mcp_installed' || data.type === 'mcp_removed' || data.type === 'skill_installed' || data.type === 'agent_spawned' || data.type === 'agent_destroyed') {
+            // Real-time hot update with zero page refresh!
+            if (this.skillsComponent) {
+              this.skillsComponent.loadData();
+            }
           }
         } catch (e) {}
       };

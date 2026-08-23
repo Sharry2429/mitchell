@@ -226,9 +226,17 @@ async def api_skills(request: Request) -> JSONResponse:
         if action == "execute":
             res = skill_executor.execute(body.get("name", ""), parameters=body.get("parameters", {}))
             return JSONResponse(res)
-        elif action == "install_markdown":
-            skill = skill_library.install_skill_markdown(body.get("markdown", ""), name=body.get("name"))
-            return JSONResponse({"status": "success", "skill": skill.model_dump(mode="json")})
+        elif action in ("install_markdown", "create"):
+            name = body.get("name", "custom_skill")
+            md = body.get("markdown") or f"# Skill: {name}\n{body.get('description', '')}"
+            skill = skill_library.install_skill_markdown(md, name=name)
+            skill_data = skill.model_dump(mode="json")
+            await ws_manager.broadcast({
+                "type": "skill_installed",
+                "skill": skill_data,
+                "status": "active"
+            })
+            return JSONResponse({"status": "success", "skill": skill_data})
         elif action == "delete":
             deleted = skill_library.delete_skill(body.get("name", ""))
             return JSONResponse({"status": "deleted" if deleted else "not_found"})
@@ -271,6 +279,7 @@ async def api_plugins(request: Request) -> JSONResponse:
             return JSONResponse({"error": "Missing plugin target"}, status_code=400)
         if action == "install":
             res = plugin_installer.install(target, marketplace=body.get("marketplace"))
+            await ws_manager.broadcast({"type": "plugin_installed", "plugin": target, "status": "active"})
             return JSONResponse(res)
         elif action == "uninstall":
             res = plugin_installer.uninstall(target)
@@ -280,7 +289,7 @@ async def api_plugins(request: Request) -> JSONResponse:
 
 
 async def api_mcp(request: Request) -> JSONResponse:
-    """Model Context Protocol (MCP) server management API."""
+    """Model Context Protocol (MCP) server management API with live hot-reloading."""
     from mitchell.mcp_client.hub import mcp_hub
     if request.method == "GET":
         return JSONResponse({
@@ -296,10 +305,17 @@ async def api_mcp(request: Request) -> JSONResponse:
             args = body.get("args", [])
             env = body.get("env", {})
             client = mcp_hub.add_stdio_server(server_name, command=command, args=args, env=env)
+            tools = client.list_remote_tools()
+            await ws_manager.broadcast({
+                "type": "mcp_installed",
+                "server_name": server_name,
+                "status": "connected" if client.is_connected else "failed",
+                "tools": tools,
+            })
             return JSONResponse({
                 "status": "connected" if client.is_connected else "failed",
                 "server_name": server_name,
-                "tools": client.list_remote_tools(),
+                "tools": tools,
             })
         elif action == "install_package":
             pkg = body.get("package", "").strip()
@@ -310,11 +326,19 @@ async def api_mcp(request: Request) -> JSONResponse:
             args = ["-y", pkg] if cmd == "npx" else ["-m", pkg]
             try:
                 client = mcp_hub.add_stdio_server(name, command=cmd, args=args)
+                tools = client.list_remote_tools()
+                await ws_manager.broadcast({
+                    "type": "mcp_installed",
+                    "server_name": name,
+                    "package": pkg,
+                    "status": "connected" if client.is_connected else "installed",
+                    "tools": tools,
+                })
                 return JSONResponse({
                     "status": "connected" if client.is_connected else "installed",
                     "server_name": name,
                     "package": pkg,
-                    "tools": client.list_remote_tools(),
+                    "tools": tools,
                 })
             except Exception as e:
                 return JSONResponse({
@@ -326,6 +350,7 @@ async def api_mcp(request: Request) -> JSONResponse:
                 })
         elif action == "remove":
             res = mcp_hub.remove_server(server_name)
+            await ws_manager.broadcast({"type": "mcp_removed", "server_name": server_name})
             return JSONResponse({"status": "removed" if res else "not_found"})
         elif action == "call":
             client = mcp_hub.get_client(server_name)
@@ -342,11 +367,69 @@ async def api_mcp(request: Request) -> JSONResponse:
 async def api_agents(request: Request) -> JSONResponse:
     """List hive agents and task graph state."""
     from mitchell.hive.router import hive_router
+    from mitchell.hive.dynamic import dynamic_swarm
     agents = hive_router.list_agents()
+    dynamic_list = dynamic_swarm.list_all()
     return JSONResponse({
         "agents": agents,
+        "dynamic_agents": dynamic_list,
+        "count": len(agents),
+        "dynamic_count": len(dynamic_list),
         "blackboard": blackboard.dump_state(),
     })
+
+
+async def api_agents_dynamic(request: Request) -> JSONResponse:
+    """Nous Hermes Dynamic Multi-Agent Swarm API."""
+    from mitchell.hive.dynamic import dynamic_swarm
+    if request.method == "GET":
+        return JSONResponse({
+            "dynamic_agents": dynamic_swarm.list_all(),
+            "count": len(dynamic_swarm.dynamic_agents),
+        })
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "spawn")
+        if action == "spawn":
+            agent = dynamic_swarm.spawn(
+                name=body.get("name"),
+                description=body.get("description", ""),
+                system_prompt=body.get("system_prompt", ""),
+                allowed_tools=body.get("tools"),
+                model_name=body.get("model", "fast"),
+                parent_agent_id=body.get("parent_agent_id"),
+            )
+            agent_meta = {
+                "agent_id": agent.agent_id,
+                "description": agent.description,
+                "model_name": agent.model_name,
+                "tools_count": len(agent.get_available_tools_metadata()),
+                "status": agent.status,
+            }
+            await ws_manager.broadcast({"type": "agent_spawned", "agent": agent_meta})
+            return JSONResponse({"status": "spawned", "agent": agent_meta})
+        elif action == "run":
+            agent_id = body.get("agent_id", "")
+            agent = dynamic_swarm.get(agent_id)
+            if not agent:
+                return JSONResponse({"error": f"Agent '{agent_id}' not found"}, status_code=404)
+            message = body.get("message", "")
+            await ws_manager.broadcast({"type": "agent_status", "agent_id": agent_id, "status": "running"})
+            res = await agent.async_process(message)
+            await ws_manager.broadcast({"type": "agent_status", "agent_id": agent_id, "status": "completed"})
+            return JSONResponse({"agent_id": agent_id, "response": res})
+        elif action == "destroy":
+            agent_id = body.get("agent_id", "")
+            res = dynamic_swarm.destroy(agent_id)
+            if res:
+                await ws_manager.broadcast({"type": "agent_destroyed", "agent_id": agent_id})
+            return JSONResponse({"status": "destroyed" if res else "not_found"})
+        elif action == "parallel_swarm":
+            tasks = body.get("tasks", [])
+            results = await dynamic_swarm.parallel_swarm_execute(tasks)
+            return JSONResponse({"status": "completed", "results": results})
+        return JSONResponse({"error": f"Unknown action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
 
 
 async def api_diagnostics(request: Request) -> JSONResponse:
@@ -879,6 +962,7 @@ def create_studio_app() -> Starlette:
         Route("/api/plugins", endpoint=api_plugins, methods=["GET", "POST"]),
         Route("/api/mcp", endpoint=api_mcp, methods=["GET", "POST"]),
         Route("/api/agents", endpoint=api_agents),
+        Route("/api/agents/dynamic", endpoint=api_agents_dynamic, methods=["GET", "POST"]),
         Route("/api/diagnostics", endpoint=api_diagnostics),
         Route("/api/search", endpoint=api_search, methods=["POST"]),
         Route("/api/settings", endpoint=api_settings, methods=["GET", "POST"]),
