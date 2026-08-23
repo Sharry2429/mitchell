@@ -154,7 +154,45 @@ class ProjectScaffolder:
                 return []
         return []
 
+    def get_directory_tree(self, root_path: str, max_depth: int = 4) -> Dict[str, Any]:
+        """Generate a hierarchical JSON tree for the file explorer."""
+        root = Path(root_path).resolve()
+        if not root.exists():
+            root = Path(os.getcwd()).resolve()
+
+        ignore_names = {".git", "__pycache__", "node_modules", ".pytest_cache", ".venv", "venv", ".mitchell"}
+
+        def _scan_dir(current_dir: Path, current_depth: int) -> Dict[str, Any]:
+            children = []
+            if current_depth <= max_depth:
+                try:
+                    for entry in sorted(current_dir.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower())):
+                        if entry.name in ignore_names:
+                            continue
+                        if entry.is_dir():
+                            children.append(_scan_dir(entry, current_depth + 1))
+                        else:
+                            children.append({
+                                "name": entry.name,
+                                "path": str(entry.resolve()),
+                                "type": "file",
+                                "extension": entry.suffix.lstrip("."),
+                                "size_bytes": entry.stat().st_size if entry.exists() else 0,
+                            })
+                except PermissionError:
+                    pass
+
+            return {
+                "name": current_dir.name or str(current_dir),
+                "path": str(current_dir.resolve()),
+                "type": "directory",
+                "children": children,
+            }
+
+        return _scan_dir(root, 1)
+
 
 project_scaffolder = ProjectScaffolder()
 
 __all__ = ["ProjectManifest", "ProjectScaffolder", "project_scaffolder"]
+

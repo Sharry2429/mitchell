@@ -6,9 +6,11 @@ and all API routes for the unified command surface.
 
 import asyncio
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
+
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -365,9 +367,11 @@ async def api_ide(request: Request) -> JSONResponse:
     """Agentic IDE operations."""
     from mitchell.ide import code_editor, code_runner, git_manager, platform_bridges, project_scaffolder, terminal_manager
     if request.method == "GET":
+        root = request.query_params.get("root", os.getcwd())
         return JSONResponse({
             "projects": project_scaffolder.list_projects(),
             "tools": [t.model_dump() for t in platform_bridges.scan_installed_tools()],
+            "file_tree": project_scaffolder.get_directory_tree(root),
         })
     elif request.method == "POST":
         body = await request.json()
@@ -390,6 +394,185 @@ async def api_ide(request: Request) -> JSONResponse:
         elif action == "run_tests":
             res = code_runner.run_tests(cwd=body.get("cwd"), test_path=body.get("test_path"))
             return JSONResponse(res.model_dump(mode="json"))
+        elif action == "file_tree":
+            tree = project_scaffolder.get_directory_tree(body.get("root", os.getcwd()))
+            return JSONResponse(tree)
+        return JSONResponse({"error": f"Unknown action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_harness(request: Request) -> JSONResponse:
+    """Multi-Agent Coding Harness (Under One Roof) API."""
+    from mitchell.ide.agent_harness import agent_harness
+    if request.method == "GET":
+        return JSONResponse({
+            "supported_agents": agent_harness.get_supported_agents(),
+            "active_sessions": [s.model_dump(mode="json") for s in agent_harness.list_sessions()],
+        })
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "start")
+        if action == "start":
+            agent_id = body.get("agent_id", "claude")
+            prompt = body.get("prompt", "")
+            cwd = body.get("cwd")
+            session = await agent_harness.start_agent_task(agent_id=agent_id, prompt=prompt, cwd=cwd)
+            return JSONResponse(session.model_dump(mode="json"))
+        elif action == "stop":
+            session_id = body.get("session_id", "")
+            stopped = await agent_harness.stop_session(session_id)
+            return JSONResponse({"status": "stopped" if stopped else "not_found"})
+        elif action == "get_session":
+            session_id = body.get("session_id", "")
+            sess = agent_harness.get_session(session_id)
+            return JSONResponse(sess.model_dump(mode="json") if sess else {"error": "not_found"}, status_code=200 if sess else 404)
+        return JSONResponse({"error": f"Unknown harness action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_documents(request: Request) -> JSONResponse:
+    """Native Document Workspace API."""
+    from mitchell.workspace.documents import document_engine
+    if request.method == "GET":
+        doc_id = request.query_params.get("id")
+        if doc_id:
+            doc = document_engine.load_document(doc_id)
+            return JSONResponse(doc.model_dump(mode="json") if doc else {"error": "not_found"}, status_code=200 if doc else 404)
+        return JSONResponse({"documents": document_engine.list_documents()})
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "save")
+        if action == "save":
+            from mitchell.workspace.documents import WorkspaceDocument
+            doc = WorkspaceDocument(
+                doc_id=body.get("doc_id", "doc"),
+                title=body.get("title", "Untitled"),
+                content=body.get("content", ""),
+                author=body.get("author", "user"),
+            )
+            document_engine.save_document(doc, change_summary=body.get("change_summary", ""))
+            return JSONResponse({"status": "saved", "doc_id": doc.doc_id})
+        elif action == "generate_report":
+            topic = body.get("topic", "System Report")
+            content = body.get("content")
+            doc = document_engine.generate_report(topic=topic, content_markdown=content)
+            return JSONResponse({"status": "generated", "document": doc.model_dump(mode="json")})
+        return JSONResponse({"error": f"Unknown action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_research(request: Request) -> JSONResponse:
+    """Perplexity-Style Deep Research API."""
+    from mitchell.browser.deep_research import deep_research_engine
+    if request.method == "GET":
+        return JSONResponse({"history": [r.model_dump(mode="json") for r in deep_research_engine.history]})
+    elif request.method == "POST":
+        body = await request.json()
+        query = body.get("query", "")
+        if not query:
+            return JSONResponse({"error": "Missing 'query' field"}, status_code=400)
+        res = await deep_research_engine.execute_research(query=query, max_sources=body.get("max_sources", 5))
+        return JSONResponse(res.model_dump(mode="json"))
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_iot(request: Request) -> JSONResponse:
+    """Home Assistant & IoT API."""
+    from mitchell.iot.homeassistant import homeassistant_client
+    if request.method == "GET":
+        states = await homeassistant_client.get_states()
+        return JSONResponse({
+            "configured": homeassistant_client.is_configured(),
+            "entities": [s.model_dump(mode="json") for s in states],
+        })
+    elif request.method == "POST":
+        body = await request.json()
+        domain = body.get("domain", "light")
+        service = body.get("service", "turn_on")
+        entity_id = body.get("entity_id", "")
+        data = body.get("service_data", {})
+        res = await homeassistant_client.call_service(domain, service, entity_id, service_data=data)
+        return JSONResponse(res)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_teaching(request: Request) -> JSONResponse:
+    """Teaching & Skill Synthesis API."""
+    from mitchell.teaching.recorder import ActionRecorder
+    from mitchell.teaching.synthesizer import skill_synthesizer
+    if request.method == "GET":
+        return JSONResponse({"status": "ready"})
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "synthesize")
+        if action == "synthesize":
+            actions_data = body.get("actions", [])
+            recorder = ActionRecorder()
+            for a in actions_data:
+                recorder.add_action(
+                    action_type=a.get("action_type", "tool"),
+                    target=a.get("target", ""),
+                    params=a.get("params", {}),
+                    timestamp=a.get("timestamp", time.time()),
+                )
+            name = body.get("name", "taught_skill")
+            res = skill_synthesizer.synthesize_from_recorder(recorder, name=name, description=body.get("description", ""))
+            return JSONResponse(res.model_dump(mode="json"))
+        return JSONResponse({"error": f"Unknown teaching action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_takeover(request: Request) -> JSONResponse:
+    """Task Takeover & Human Approval Gates API."""
+    from mitchell.action.takeover import takeover_engine
+    if request.method == "GET":
+        session_id = request.query_params.get("session_id")
+        if session_id:
+            s = takeover_engine.get_session(session_id)
+            return JSONResponse(s.model_dump(mode="json") if s else {"error": "not_found"}, status_code=200 if s else 404)
+        return JSONResponse({"sessions": [s.model_dump(mode="json") for s in takeover_engine.list_sessions()]})
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "start")
+        if action == "start":
+            goal = body.get("goal", "")
+            s = takeover_engine.start_takeover(goal=goal)
+            return JSONResponse(s.model_dump(mode="json"))
+        elif action == "advance":
+            session_id = body.get("session_id", "")
+            s = takeover_engine.advance_step(session_id, success=body.get("success", True), summary=body.get("summary", ""))
+            return JSONResponse(s.model_dump(mode="json") if s else {"error": "not_found"})
+        elif action == "approve_gate":
+            session_id = body.get("session_id", "")
+            s = takeover_engine.approve_gate(session_id)
+            return JSONResponse(s.model_dump(mode="json") if s else {"error": "not_found"})
+        return JSONResponse({"error": f"Unknown takeover action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_browser_real(request: Request) -> JSONResponse:
+    """Real Browser Profile & CDP Attachment API."""
+    from mitchell.browser.cdp_attach import real_browser_manager
+    if request.method == "GET":
+        profiles = real_browser_manager.find_user_profiles()
+        page_info = await real_browser_manager.get_page_info()
+        return JSONResponse({
+            "profiles": [p.model_dump(mode="json") for p in profiles],
+            "active_page": page_info,
+        })
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "attach")
+        if action == "attach":
+            res = await real_browser_manager.attach_real_profile(
+                user_data_dir=body.get("user_data_dir"),
+                profile_directory=body.get("profile_directory", "Default"),
+                headless=body.get("headless", False),
+            )
+            return JSONResponse(res)
+        elif action == "close":
+            await real_browser_manager.close()
+            return JSONResponse({"status": "closed"})
         return JSONResponse({"error": f"Unknown action: {action}"}, status_code=400)
     return JSONResponse({"error": "Method not allowed"}, status_code=405)
 
@@ -480,15 +663,25 @@ def create_studio_app() -> Starlette:
         Route("/api/settings", endpoint=api_settings, methods=["GET"]),
         Route("/api/workspace", endpoint=api_workspace, methods=["GET"]),
         Route("/api/ide", endpoint=api_ide, methods=["GET", "POST"]),
+        Route("/api/harness", endpoint=api_harness, methods=["GET", "POST"]),
+        Route("/api/documents", endpoint=api_documents, methods=["GET", "POST"]),
+        Route("/api/research", endpoint=api_research, methods=["GET", "POST"]),
+        Route("/api/iot", endpoint=api_iot, methods=["GET", "POST"]),
+        Route("/api/teaching", endpoint=api_teaching, methods=["GET", "POST"]),
+        Route("/api/takeover", endpoint=api_takeover, methods=["GET", "POST"]),
+        Route("/api/browser/real", endpoint=api_browser_real, methods=["GET", "POST"]),
 
         # WebSocket
         WebSocketRoute("/ws", endpoint=ws_endpoint),
 
         # Static files
+        Mount("/css", app=StaticFiles(directory=str(studio_static_dir / "css"), check_dir=False), name="css"),
+        Mount("/js", app=StaticFiles(directory=str(studio_static_dir / "js"), check_dir=False), name="js"),
         Mount("/static", app=StaticFiles(directory=str(studio_static_dir), check_dir=False), name="static"),
     ]
 
     app = Starlette(routes=routes, debug=settings.debug)
+
 
     app.add_middleware(
         CORSMiddleware,
@@ -498,6 +691,7 @@ def create_studio_app() -> Starlette:
     )
 
     return app
+
 
 
 studio_app = create_studio_app()

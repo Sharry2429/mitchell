@@ -1,14 +1,42 @@
-const { app, BrowserWindow, Menu, Tray, ipcMain, screen, nativeImage } = require('electron');
+const { app, BrowserWindow, Menu, Tray, ipcMain, screen, nativeImage, shell, globalShortcut } = require('electron');
 const path = require('path');
 const WebSocket = require('ws');
 
 let orbWindow = null;
 let chatWindow = null;
+let studioWindow = null;
 let tray = null;
 let ws = null;
 let currentStatus = 'idle'; // idle | thinking | working | needs_attention | error
 
 const WS_URL = 'ws://127.0.0.1:8765';
+const STUDIO_URL = 'http://127.0.0.1:8765';
+
+function openStudioWindow() {
+  if (studioWindow && !studioWindow.isDestroyed()) {
+    studioWindow.focus();
+    return;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+
+  studioWindow = new BrowserWindow({
+    width: Math.min(1400, width - 100),
+    height: Math.min(900, height - 80),
+    title: 'Mitchell Studio — Unified Autonomous Command Center',
+    backgroundColor: '#0a0b0e',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  });
+
+  studioWindow.loadURL(STUDIO_URL).catch(() => {
+    // If backend not active yet, open local docs/studio
+    studioWindow.loadFile(path.join(__dirname, '..', 'docs', 'studio', 'index.html'));
+  });
+}
 
 function createOrbWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -81,11 +109,15 @@ function createTray() {
     { type: 'separator' },
     { label: 'Status: Idle', id: 'status-item', enabled: false },
     {
+      label: 'Open Mitchell Studio',
+      click: () => openStudioWindow()
+    },
+    {
       label: 'Toggle Chat Panel',
       click: () => toggleChatWindow()
     },
     {
-      label: 'Reset Position',
+      label: 'Reset Orb Position',
       click: () => {
         const { width, height } = screen.getPrimaryDisplay().workAreaSize;
         orbWindow.setPosition(width - 120, height - 120);
@@ -104,6 +136,7 @@ function createTray() {
   tray.setContextMenu(contextMenu);
   tray.on('click', () => toggleChatWindow());
 }
+
 
 function toggleChatWindow() {
   if (!chatWindow) return;
