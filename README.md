@@ -45,14 +45,14 @@ flowchart TB
 
     subgraph Integrations ["Protocols & Bridges"]
         WhatsAppMCP["WhatsApp MCP Bridge (lharries/whatsapp-mcp)"]
-        JARVIS["JARVIS Telemetry & Daily Briefing Engine"]
+        TelemetryEngine["Live Telemetry & Dynamic Briefing Engine"]
         MCPHub["Universal MCP Client Hub"]
     end
 
     UI <--> Intelligence
     Intelligence <--> Hive
     CommsWorker <--> WhatsAppMCP
-    Intelligence <--> JARVIS
+    Intelligence <--> TelemetryEngine
     WhatsAppMCP <--> MCPHub
 ```
 
@@ -83,7 +83,7 @@ flowchart TB
   - `get_last_interaction(contact)`
 - Unified inbox message recording and web intent fallback.
 
-### 3. JARVIS Engine ([JARVIS-AGI inspired](https://github.com/SreejanPersonal/JARVIS-AGI))
+### 3. Dynamic System Telemetry & Executive Briefing Engine
 - **Live Hardware Telemetry**: Real-time CPU, RAM, Disk storage, and Battery percentage metrics.
 - **Executive Daily Briefing**: Synthesizes schedule, pending Kanban cards, unread WhatsApp messages, and hardware health into morning/evening briefings.
 - **Executive Voice Persona**: Conversational speech acknowledgments and status reporting.
@@ -130,7 +130,7 @@ python -m mitchell.cli goal "whatsapp +14155550000 Meeting starts in 10 minutes"
 # Play Spotify music
 python -m mitchell.cli goal "spotify lofi beats for focus"
 
-# Generate JARVIS daily briefing
+# Generate executive daily briefing
 python -m mitchell.cli goal "briefing"
 
 # Check live system hardware telemetry

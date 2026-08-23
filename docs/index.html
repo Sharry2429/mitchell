@@ -71,7 +71,7 @@
         <a href="#studio-preview" class="text-slate hover:text-white transition-colors">Studio Center</a>
         <a href="#quickstart" class="text-slate hover:text-white transition-colors">Quickstart</a>
         <a href="#cli" class="text-slate hover:text-white transition-colors">CLI Manual</a>
-        <a href="#jarvis-telemetry" class="text-slate hover:text-white transition-colors">JARVIS Mode</a>
+        <a href="#features" class="text-slate hover:text-white transition-colors">Telemetry & Butler</a>
       </nav>
 
       <!-- Right Controls -->
@@ -251,13 +251,13 @@
         <div class="text-[11px] font-mono text-amber">spotify · yt-dlp · price tracker · deals</div>
       </div>
 
-      <!-- 6. JARVIS Telemetry & Butler -->
+      <!-- 6. Live Telemetry & Executive Butler -->
       <div class="glass-card rounded-xl p-5 border border-white/10 hover:border-lavender/40 transition-all">
         <div class="w-10 h-10 rounded-lg bg-lavender/10 text-lavender flex items-center justify-center text-lg mb-3">
           <i class="fa-solid fa-shield-heart"></i>
         </div>
-        <h3 class="text-base font-bold text-white mb-1">JARVIS Telemetry & Butler</h3>
-        <p class="text-xs text-slate leading-relaxed mb-3">Inspired by JARVIS-AGI: Real-time CPU/RAM/Battery telemetry, executive morning/evening briefings, 24/7 proactive Butler daemon, and 7-state Orb.</p>
+        <h3 class="text-base font-bold text-white mb-1">Live Telemetry & Executive Butler</h3>
+        <p class="text-xs text-slate leading-relaxed mb-3">Real-time CPU/RAM/Battery telemetry, executive dynamic morning/evening briefings, 24/7 proactive Butler daemon, and 7-state Orb.</p>
         <div class="text-[11px] font-mono text-lavender">telemetry · daily briefing · 24/7 butler</div>
       </div>
     </div>
@@ -397,7 +397,7 @@
       } else if (lower.startsWith('spotify')) {
         res = `[Spotify]: Now playing requested track via media controller.`;
       } else if (lower === 'tools') {
-        res = `Registered 41 Tools: workspace_*, ide_*, comms_*, crossdevice_*, media_*, commerce_*, iot_*, jarvis_*`;
+        res = `Registered 41 Tools: workspace_*, ide_*, comms_*, crossdevice_*, media_*, commerce_*, iot_*, system_*`;
       } else {
         res = `[Mitchell Manager]: Executing goal '${cmd}' via multi-agent DAG task graph. Status: Completed.`;
       }
