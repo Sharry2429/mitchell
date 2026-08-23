@@ -1,6 +1,6 @@
 /**
- * Mitchell Studio — Pure Minimalist OLED Black Controller
- * Focused · Functional · Clean · Zero Clutter
+ * Mitchell Studio — Complete Grok & OLED Theme Engine Controller
+ * Studio · Orb · Menus · Cursor+Antigravity IDE · Command Palette · All Surfaces
  */
 
 import { MitchellIDE } from './components/ide.js';
@@ -12,6 +12,7 @@ import { AgentsFloorStudio } from './components/agents_floor.js';
 // ── State Management ────────────────────────────────────────────────────────
 const state = {
   activePanel: 'chat',
+  activeTheme: 'grok',
   activeModel: 'grok-3',
   activeFile: 'mitchell/manager/loop.py',
   ws: null,
@@ -38,59 +39,77 @@ const state = {
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
+// ── View Map ────────────────────────────────────────────────────────────────
+const viewMap = {
+  studio: 'chat',
+  ide: 'ide',
+  orb: 'orb',
+  agents: 'agents',
+  research: 'research',
+  documents: 'documents',
+  memory: 'memory',
+  skills: 'skills',
+  settings: 'settings'
+};
+
 // ── Panel Navigation ────────────────────────────────────────────────────────
-export function switchPanel(panelId) {
-  state.activePanel = panelId;
+export function activatePanel(id) {
+  state.activePanel = id;
 
-  // Toggle active class on panels
   $$('.panel').forEach(p => p.classList.remove('active'));
-  const panelEl = $(`#panel-${panelId}`);
-  if (panelEl) panelEl.classList.add('active');
+  const panel = $(`#panel-${id}`);
+  if (panel) panel.classList.add('active');
 
-  // Toggle activity bar buttons
-  $$('.activity-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.panel === panelId);
+  $$('.activity-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.panel === id);
   });
 
-  // Update context-sensitive sidebar
-  updateSidebar(panelId);
+  updateSidebar(id);
 
-  // Lazy instantiate components
-  if (panelId === 'ide') {
+  // Sync view tabs
+  const rev = Object.entries(viewMap).find(([, v]) => v === id);
+  if (rev) {
+    $$('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === rev[0]));
+  }
+
+  // Lazy instantiate functional components
+  if (id === 'ide') {
     if (!state.ideComponent) {
       state.ideComponent = new MitchellIDE('panel-ide');
     }
-  } else if (panelId === 'documents') {
+  } else if (id === 'documents') {
     if (!state.docsComponent) {
       state.docsComponent = new DocumentsStudio('documents-content');
       state.docsComponent.render();
     }
-  } else if (panelId === 'research') {
+  } else if (id === 'research') {
     if (!state.researchComponent) {
       state.researchComponent = new DeepResearchStudio('research-results-container');
       state.researchComponent.bindEvents();
     }
-  } else if (panelId === 'home') {
+  } else if (id === 'home') {
     if (!state.homeComponent) {
       state.homeComponent = new SmartHomeStudio('home-content');
       state.homeComponent.render();
     }
-  } else if (panelId === 'agents') {
+  } else if (id === 'agents') {
     if (!state.agentsComponent) {
       state.agentsComponent = new AgentsFloorStudio('agents-grid-container');
       state.agentsComponent.render();
     }
-  } else if (panelId === 'memory') {
+  } else if (id === 'memory') {
     initMemoryCanvas();
-  } else if (panelId === 'skills') {
+  } else if (id === 'skills') {
     renderMCPCatalog();
     loadSkills();
-  } else if (panelId === 'settings') {
+  } else if (id === 'settings') {
     loadSettings();
+  } else if (id === 'workspace') {
+    loadWorkspace();
   }
 }
 
-// ── Context-Sensitive Sidebar ───────────────────────────────────────────────
+// ── Sidebar Content by Context ──────────────────────────────────────────────
 function updateSidebar(panelId) {
   const title = $('#sidebar-title');
   const body = $('#sidebar-body');
@@ -132,27 +151,29 @@ function updateSidebar(panelId) {
       </div>
     `;
   } else {
-    title.textContent = 'Navigation';
+    title.textContent = 'Mitchell';
     if (actions) actions.style.display = 'none';
     body.innerHTML = `
       <div class="nav-section">
         <div class="nav-section-label">Surfaces</div>
-        <button class="nav-item ${panelId==='chat'?'active':''}" data-nav="chat"><i class="fa-solid fa-message"></i> Chat Studio</button>
+        <button class="nav-item ${panelId==='chat'?'active':''}" data-nav="chat"><i class="fa-solid fa-message"></i> Chat</button>
         <button class="nav-item ${panelId==='ide'?'active':''}" data-nav="ide"><i class="fa-solid fa-code"></i> MitchellIDE</button>
         <button class="nav-item ${panelId==='agents'?'active':''}" data-nav="agents"><i class="fa-solid fa-diagram-project"></i> Agent Floor <span class="badge">12</span></button>
-        <button class="nav-item ${panelId==='research'?'active':''}" data-nav="research"><i class="fa-solid fa-magnifying-glass-chart"></i> Deep Research</button>
+        <button class="nav-item ${panelId==='orb'?'active':''}" data-nav="orb"><i class="fa-solid fa-circle-nodes"></i> Orb</button>
+        <button class="nav-item ${panelId==='research'?'active':''}" data-nav="research"><i class="fa-solid fa-magnifying-glass-chart"></i> Research</button>
         <button class="nav-item ${panelId==='documents'?'active':''}" data-nav="documents"><i class="fa-solid fa-file-lines"></i> Documents</button>
         <button class="nav-item ${panelId==='home'?'active':''}" data-nav="home"><i class="fa-solid fa-house-signal"></i> Smart Home</button>
       </div>
       <div class="nav-section">
         <div class="nav-section-label">System</div>
-        <button class="nav-item" data-nav="memory"><i class="fa-solid fa-brain"></i> Memory Graph</button>
-        <button class="nav-item" data-nav="skills"><i class="fa-solid fa-wand-magic-sparkles"></i> MCP Hub</button>
+        <button class="nav-item" data-nav="workspace"><i class="fa-solid fa-folder-tree"></i> Workspace</button>
+        <button class="nav-item" data-nav="memory"><i class="fa-solid fa-brain"></i> Memory</button>
+        <button class="nav-item" data-nav="skills"><i class="fa-solid fa-wand-magic-sparkles"></i> Skills & MCP</button>
         <button class="nav-item" data-nav="settings"><i class="fa-solid fa-gear"></i> Settings</button>
-      </div>
-    `;
-    body.querySelectorAll('[data-nav]').forEach(btn => {
-      btn.addEventListener('click', () => switchPanel(btn.dataset.nav));
+      </div>`;
+    body.querySelectorAll('[data-nav]').forEach(el => {
+      el.classList.toggle('active', el.dataset.nav === panelId);
+      el.addEventListener('click', () => activatePanel(el.dataset.nav));
     });
   }
 }
@@ -164,14 +185,7 @@ function renderFileTreeSidebar(container) {
       const tree = data.file_tree;
       container.innerHTML = `
         <div class="nav-section">
-          <div class="nav-section-label">Open Editors</div>
-          <div class="file-tree">
-            <div class="tree-file active"><i class="fa-brands fa-python" style="color:#4ade80"></i> loop.py</div>
-            <div class="tree-file"><i class="fa-brands fa-python" style="color:#4ade80"></i> server.py</div>
-          </div>
-        </div>
-        <div class="nav-section">
-          <div class="nav-section-label">Workspace: Mitchell</div>
+          <div class="nav-section-label">Mitchell Workspace</div>
           <div class="file-tree" id="ide-file-tree-root">
             ${renderTreeNodes(tree?.children || [])}
           </div>
@@ -182,13 +196,21 @@ function renderFileTreeSidebar(container) {
     .catch(() => {
       container.innerHTML = `
         <div class="nav-section">
-          <div class="nav-section-label">Workspace</div>
+          <div class="nav-section-label">Mitchell</div>
           <div class="file-tree">
             <div class="tree-folder"><i class="fa-solid fa-folder"></i> mitchell</div>
             <div class="tree-children">
-              <div class="tree-file active"><i class="fa-brands fa-python" style="color:#4ade80"></i> loop.py</div>
-              <div class="tree-file"><i class="fa-brands fa-python" style="color:#4ade80"></i> server.py</div>
+              <div class="tree-folder"><i class="fa-solid fa-folder"></i> core</div>
+              <div class="tree-children">
+                <div class="tree-file active"><i class="fa-solid fa-file-code"></i> manager.py</div>
+                <div class="tree-file"><i class="fa-solid fa-file-code"></i> config.py</div>
+              </div>
+              <div class="tree-folder"><i class="fa-solid fa-folder"></i> hive</div>
+              <div class="tree-folder"><i class="fa-solid fa-folder"></i> studio</div>
+              <div class="tree-file"><i class="fa-solid fa-file-code"></i> cli.py</div>
             </div>
+            <div class="tree-folder"><i class="fa-solid fa-folder"></i> docs</div>
+            <div class="tree-file"><i class="fa-brands fa-python"></i> pyproject.toml</div>
           </div>
         </div>
       `;
@@ -207,13 +229,11 @@ function renderTreeNodes(nodes) {
       `;
     } else {
       let icon = 'fa-solid fa-file-code';
-      let color = 'var(--text-muted)';
-      if (n.name.endsWith('.py')) { icon = 'fa-brands fa-python'; color = '#4ade80'; }
-      else if (n.name.endsWith('.js')) { icon = 'fa-brands fa-js'; color = '#fbbf24'; }
-      else if (n.name.endsWith('.json')) { icon = 'fa-solid fa-brackets-curly'; color = 'var(--accent-cyan)'; }
-      else if (n.name.endsWith('.md')) { icon = 'fa-solid fa-file-lines'; color = 'var(--accent-blue)'; }
+      if (n.name.endsWith('.py')) icon = 'fa-brands fa-python';
+      else if (n.name.endsWith('.js')) icon = 'fa-brands fa-js';
+      else if (n.name.endsWith('.md')) icon = 'fa-solid fa-file-lines';
 
-      html += `<div class="tree-file" data-path="${n.path}"><i class="${icon}" style="color:${color}"></i> ${n.name}</div>`;
+      html += `<div class="tree-file" data-path="${n.path}"><i class="${icon}"></i> ${n.name}</div>`;
     }
   }
   return html;
@@ -261,7 +281,7 @@ function updateEditorGutter(content) {
   const gutterEl = $('#editor-gutter');
   if (gutterEl) {
     let numbers = [];
-    for (let i = 1; i <= Math.max(lineCount, 20); i++) numbers.push(i);
+    for (let i = 1; i <= Math.max(lineCount, 18); i++) numbers.push(i);
     gutterEl.innerHTML = numbers.join('<br>');
   }
 }
@@ -276,12 +296,12 @@ function initMemoryCanvas() {
   const ctx = canvas.getContext('2d');
 
   const nodes = [
-    { x: 300, y: 210, r: 22, label: 'Mitchell Core', color: '#00e5ff', vx: 0, vy: 0 },
-    { x: 180, y: 120, r: 15, label: 'Self-Model', color: '#00ff88', vx: 0.2, vy: -0.1 },
+    { x: 300, y: 210, r: 22, label: 'Mitchell Core', color: '#22d3ee', vx: 0, vy: 0 },
+    { x: 180, y: 120, r: 15, label: 'Self-Model', color: '#34d399', vx: 0.2, vy: -0.1 },
     { x: 420, y: 130, r: 15, label: 'Episodic', color: '#a78bfa', vx: -0.15, vy: 0.2 },
     { x: 200, y: 310, r: 16, label: 'MCP Tools', color: '#fbbf24', vx: 0.1, vy: 0.15 },
     { x: 400, y: 300, r: 14, label: 'Semantic Triples', color: '#60a5fa', vx: -0.2, vy: -0.1 },
-    { x: 110, y: 220, r: 13, label: 'Real CDP', color: '#34d399', vx: 0.1, vy: -0.15 },
+    { x: 110, y: 220, r: 13, label: 'Real CDP', color: '#4ade80', vx: 0.1, vy: -0.15 },
     { x: 490, y: 210, r: 13, label: 'Home Assistant', color: '#f87171', vx: -0.1, vy: 0.1 }
   ];
 
@@ -309,13 +329,13 @@ function initMemoryCanvas() {
 
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = '#101014';
+      ctx.fillStyle = '#151518';
       ctx.strokeStyle = n.color;
       ctx.lineWidth = 1.5;
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = '#f4f4f6';
+      ctx.fillStyle = '#f4f4f5';
       ctx.font = '10px Inter';
       ctx.textAlign = 'center';
       ctx.fillText(n.label, n.x, n.y + n.r + 12);
@@ -339,7 +359,7 @@ function renderMCPCatalog() {
     <div class="mcp-card">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <span class="mcp-name">${m.name}</span>
-        <span class="badge" style="background:${m.installed?'rgba(0,255,136,0.15)':'rgba(255,255,255,0.06)'};color:${m.installed?'var(--accent-mint)':'var(--text-muted)'}">
+        <span class="badge" style="background:${m.installed?'rgba(52,211,153,0.15)':'rgba(255,255,255,0.06)'};color:${m.installed?'var(--accent-mint)':'var(--text-muted)'}">
           ${m.installed ? 'Installed' : 'Available'}
         </span>
       </div>
@@ -357,7 +377,7 @@ function renderMCPCatalog() {
       if (target) {
         target.installed = true;
         renderMCPCatalog();
-        addChatMessage('assistant', `<strong>MCP Server Installed:</strong> <code>${name}</code> is ready.`);
+        addChatMessage('assistant', `<strong>MCP Server Installed:</strong> <code>${name}</code> is online.`);
       }
     });
   });
@@ -371,7 +391,7 @@ function loadSkills() {
     .then(data => {
       const skills = data.skills || [];
       listEl.innerHTML = skills.map(s => `
-        <div style="padding:8px 12px;background:var(--bg-deep);border:1px solid var(--glass-border);border-radius:var(--radius-xs);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="padding:8px 12px;background:var(--bg-elevated);border:1px solid var(--glass-border);border-radius:var(--radius-xs);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
           <div>
             <div style="font-weight:600;font-size:12.5px;">${s.name}</div>
             <div style="font-size:11px;color:var(--text-secondary);">${s.description}</div>
@@ -430,6 +450,25 @@ function saveSettings() {
     .catch(e => alert(`Failed to save keys: ${e.message}`));
 }
 
+function loadWorkspace() {
+  fetch('/api/workspace?section=summary')
+    .then(r => r.json())
+    .then(data => {
+      const el = $('#workspace-content');
+      if (el) {
+        el.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));gap:12px;">
+            <div class="metric-card"><div class="metric-title">Documents</div><div class="metric-value">${data.documents_count || 4}</div></div>
+            <div class="metric-card"><div class="metric-title">Spreadsheets</div><div class="metric-value">${data.spreadsheets_count || 1}</div></div>
+            <div class="metric-card"><div class="metric-title">Notes & Graph</div><div class="metric-value">${data.notes_count || 6}</div></div>
+            <div class="metric-card"><div class="metric-title">Projects & Kanban</div><div class="metric-value">${data.projects_count || 2}</div></div>
+          </div>
+        `;
+      }
+    })
+    .catch(() => {});
+}
+
 // ── Chat & Messaging ────────────────────────────────────────────────────────
 function addChatMessage(role, content) {
   const container = $('#chat-messages');
@@ -464,7 +503,7 @@ function sendChat() {
       if (data.cost) updateCost(data.cost);
     })
     .catch(() => {
-      addChatMessage('assistant', `Acknowledged: "${text}". Dispatching to autonomous loop.`);
+      addChatMessage('assistant', `Acknowledged: "${text}". Executing autonomous loop.`);
     });
 }
 
@@ -475,7 +514,7 @@ function updateCost(costData) {
   }
 }
 
-// ── WebSocket Connection ────────────────────────────────────────────────────
+// ── WebSocket Stream ────────────────────────────────────────────────────────
 function connectWebSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -506,24 +545,54 @@ function connectWebSocket() {
 
 // ── DOM Ready Initialization ────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Activity Bar
-  $$('.activity-btn[data-panel]').forEach(btn => {
+  /* Themes */
+  $$('.theme-chip').forEach(btn => {
     btn.addEventListener('click', () => {
-      switchPanel(btn.dataset.panel);
+      $$('.theme-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.documentElement.setAttribute('data-theme', btn.dataset.theme);
+      state.activeTheme = btn.dataset.theme;
     });
   });
 
-  // Quick Chips in Chat
-  $$('.chip[data-go]').forEach(chip => {
-    chip.addEventListener('click', () => switchPanel(chip.dataset.go));
+  /* View tabs */
+  $$('.view-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      $$('.view-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activatePanel(viewMap[tab.dataset.view] || 'chat');
+    });
   });
 
-  // Sidebar Toggle
+  /* Activity buttons */
+  $$('.activity-btn').forEach(btn => {
+    btn.addEventListener('click', () => activatePanel(btn.dataset.panel));
+  });
+
+  /* Mini orb trigger */
+  $('#mini-orb-trigger')?.addEventListener('click', () => activatePanel('orb'));
+
+  /* Quick chips */
+  $$('.chip[data-go]').forEach(chip => {
+    chip.addEventListener('click', () => activatePanel(chip.dataset.go));
+  });
+
+  /* Sidebar toggle */
   $('#toggle-sidebar')?.addEventListener('click', () => {
     $('#sidebar')?.classList.toggle('collapsed');
   });
 
-  // Model Selector
+  /* Orb states */
+  $$('.orb-state-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.orb-state-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const orb = $('#main-orb');
+      if (orb) orb.className = 'orb ' + btn.dataset.state;
+    });
+  });
+
+  /* Model selector */
   const modelPill = $('#model-selector-pill');
   modelPill?.addEventListener('click', () => {
     const models = ['Grok 3 · xAI', 'Claude 3.7 Sonnet', 'GPT-4o (OpenAI)', 'Gemini 2.0 Flash', 'DeepSeek-R1', 'Local Llama 3'];
@@ -532,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#model-pill-label').textContent = models[nextIdx];
   });
 
-  // Chat Send
+  /* Chat Send */
   $('#chat-send')?.addEventListener('click', sendChat);
   $('#chat-input')?.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -541,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Deep Research Execute
+  /* Deep Research Execute */
   $('#research-run-btn')?.addEventListener('click', () => {
     const query = $('#research-query-input')?.value.trim();
     if (!query) return;
@@ -575,10 +644,10 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(e => container.innerHTML = `<div class="empty-state"><p>Error: ${e.message}</p></div>`);
   });
 
-  // Settings Save
+  /* Settings Save */
   $('#save-keys-btn')?.addEventListener('click', saveSettings);
 
-  // Terminal Runner in IDE
+  /* Terminal Runner in IDE */
   $('#terminal-cli-input')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const cmd = e.target.value.trim();
@@ -603,12 +672,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Composer AI Actions
+  /* Composer AI Actions */
   $('#composer-apply-btn')?.addEventListener('click', () => {
-    alert('Surgical Diff applied to loop.py.');
+    alert('Surgical Diff applied to manager.py.');
   });
 
-  // Command Palette (Ctrl+K)
+  /* Command palette */
   const overlay = $('#cmd-overlay');
   function openCmd() {
     overlay?.classList.add('open');
@@ -631,11 +700,32 @@ document.addEventListener('DOMContentLoaded', () => {
     item.addEventListener('click', () => {
       const act = item.dataset.act;
       closeCmd();
-      if (act) switchPanel(act);
+      if (act) activatePanel(act);
     });
   });
 
-  // Initial Panel Setup
-  switchPanel('chat');
+  /* Context menu on editor */
+  const ctx = $('#ctx-menu');
+  $('#ide-editor-container')?.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if (ctx) {
+      ctx.style.left = e.clientX + 'px';
+      ctx.style.top = e.clientY + 'px';
+      ctx.classList.add('open');
+    }
+  });
+  document.addEventListener('click', () => ctx?.classList.remove('open'));
+
+  /* Chat textarea auto-grow */
+  const ta = $('#chat-input');
+  if (ta) {
+    ta.addEventListener('input', () => {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
+    });
+  }
+
+  /* Initial setup */
+  activatePanel('chat');
   connectWebSocket();
 });

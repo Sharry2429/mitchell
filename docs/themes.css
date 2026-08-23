@@ -1,64 +1,124 @@
-/* Mitchell & Grok Dynamic Theme Engine Palettes */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MITCHELL AI — COMPLETE MULTI-THEME ENGINE TOKENS
+   Grok Carbon · OLED Black · Cyberpunk · Solarized · Nordic · Lavender Glass
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-:root {
-  --bg-color: #000000;
-  --panel-color: #0c0c0f;
-  --panel-hover: #141418;
-  --panel-border: rgba(255, 255, 255, 0.1);
-  --text-primary: #ffffff;
-  --text-secondary: #999999;
-  --text-muted: #555555;
-  --accent-primary: #ffffff;
-  --accent-secondary: #00e5ff;
-  --accent-mint: #00ff88;
-  --accent-amber: #ff9900;
-  --accent-coral: #ff4444;
+:root, [data-theme="grok"] {
+  --bg-void:        #050506;
+  --bg-deep:        #0a0a0c;
+  --bg-base:        #0f0f12;
+  --bg-surface:     #151518;
+  --bg-elevated:    #1c1c21;
+  --bg-hover:       #242429;
+  --bg-active:      #2c2c33;
+  --bg-input:       #121215;
+
+  --glass-bg:       rgba(15, 15, 18, 0.72);
+  --glass-bg-heavy: rgba(10, 10, 12, 0.88);
+  --glass-border:   rgba(255, 255, 255, 0.06);
+  --glass-border-h: rgba(255, 255, 255, 0.12);
+  --glass-highlight:rgba(255, 255, 255, 0.03);
+
+  --text-primary:   #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted:     #71717a;
+  --text-faint:     #52525b;
+  --text-inverse:   #09090b;
+
+  --accent:         #ffffff;
+  --accent-dim:     #d4d4d8;
+  --accent-cyan:    #22d3ee;
+  --accent-blue:    #60a5fa;
+  --accent-violet:  #a78bfa;
+  --accent-purple:  #c084fc;
+  --accent-mint:    #34d399;
+  --accent-green:   #4ade80;
+  --accent-amber:   #fbbf24;
+  --accent-orange:  #fb923c;
+  --accent-rose:    #fb7185;
+  --accent-red:     #f87171;
+
+  --gradient-brand: linear-gradient(135deg, #ffffff 0%, #a1a1aa 40%, #22d3ee 100%);
+  --gradient-orb:   linear-gradient(135deg, #18181b 0%, #0a0a0c 100%);
+  --gradient-glow:  radial-gradient(ellipse at 50% 0%, rgba(34, 211, 238, 0.12) 0%, transparent 60%);
+  --gradient-panel: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.55);
+  --shadow-lg:  0 12px 40px rgba(0,0,0,0.65);
+  --shadow-glow:0 0 32px rgba(34, 211, 238, 0.15);
+  --shadow-orb: 0 0 40px rgba(255,255,255,0.08);
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl:24px;
+
+  --font-ui:   'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  --sidebar-w: 220px;
+  --sidebar-c: 56px;
+  --topbar-h:  48px;
+  --activity-w:48px;
+  --status-h:  28px;
+  --ide-chat-w:380px;
+
+  --ease:      cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast:    120ms var(--ease);
+  --t-base:    200ms var(--ease);
+  --t-slow:    320ms var(--ease);
 }
 
 [data-theme="oled"] {
-  --bg-color: #000000;
-  --panel-color: #080808;
-  --panel-hover: #121212;
-  --panel-border: rgba(255, 255, 255, 0.12);
-  --text-primary: #ffffff;
-  --text-secondary: #777777;
-  --accent-primary: #ffffff;
-  --accent-secondary: #aaaaaa;
-  --accent-mint: #00ff88;
+  --bg-void: #000000; --bg-deep: #000000; --bg-base: #050505;
+  --bg-surface: #0a0a0a; --bg-elevated: #111111; --bg-hover: #1a1a1a;
+  --bg-active: #222; --bg-input: #080808;
+  --glass-bg: rgba(5,5,5,0.85); --glass-border: rgba(255,255,255,0.08);
+  --accent-cyan: #00e5ff; --accent-mint: #00ff88;
+  --gradient-brand: linear-gradient(135deg, #fff 0%, #888 50%, #00e5ff 100%);
 }
 
 [data-theme="cyberpunk"] {
-  --bg-color: #05050a;
-  --panel-color: #0c0b1a;
-  --panel-hover: #16152b;
-  --panel-border: rgba(255, 0, 127, 0.3);
-  --text-primary: #00ffcc;
-  --text-secondary: #ff007f;
-  --accent-primary: #ff007f;
-  --accent-secondary: #00e5ff;
-  --accent-mint: #00ff66;
+  --bg-void: #030308; --bg-deep: #05050f; --bg-base: #0a0a18;
+  --bg-surface: #10102a; --bg-elevated: #16163a; --bg-hover: #1e1e4a;
+  --glass-border: rgba(255, 0, 127, 0.25);
+  --text-primary: #e0fff8; --text-secondary: #ff7eb9;
+  --accent: #ff007f; --accent-cyan: #00e5ff; --accent-mint: #00ff66;
+  --accent-violet: #bf5af2; --accent-purple: #ff007f;
+  --gradient-brand: linear-gradient(135deg, #ff007f 0%, #00e5ff 100%);
+  --shadow-glow: 0 0 32px rgba(255, 0, 127, 0.25);
 }
 
 [data-theme="solarized"] {
-  --bg-color: #002b36;
-  --panel-color: #073642;
-  --panel-hover: #0c4352;
-  --panel-border: rgba(181, 137, 0, 0.25);
-  --text-primary: #fdf6e3;
-  --text-secondary: #93a1a1;
-  --accent-primary: #b58900;
-  --accent-secondary: #cb4b16;
-  --accent-mint: #859900;
+  --bg-void: #001b22; --bg-deep: #002b36; --bg-base: #073642;
+  --bg-surface: #0a3d4a; --bg-elevated: #0e4a5a; --bg-hover: #125566;
+  --glass-border: rgba(181, 137, 0, 0.2);
+  --text-primary: #fdf6e3; --text-secondary: #93a1a1;
+  --accent: #b58900; --accent-cyan: #2aa198; --accent-mint: #859900;
+  --accent-amber: #b58900; --accent-orange: #cb4b16;
+  --gradient-brand: linear-gradient(135deg, #b58900 0%, #cb4b16 100%);
 }
 
 [data-theme="nordic"] {
-  --bg-color: #2e3440;
-  --panel-color: #3b4252;
-  --panel-hover: #434c5e;
-  --panel-border: rgba(136, 192, 208, 0.25);
-  --text-primary: #eceff4;
-  --text-secondary: #d8dee9;
-  --accent-primary: #88c0d0;
-  --accent-secondary: #81a1c1;
-  --accent-mint: #a3be8c;
+  --bg-void: #242933; --bg-deep: #2e3440; --bg-base: #3b4252;
+  --bg-surface: #434c5e; --bg-elevated: #4c566a; --bg-hover: #5e6a7e;
+  --glass-border: rgba(136, 192, 208, 0.2);
+  --text-primary: #eceff4; --text-secondary: #d8dee9;
+  --accent: #88c0d0; --accent-cyan: #8fbcbb; --accent-mint: #a3be8c;
+  --accent-violet: #b48ead; --accent-blue: #81a1c1;
+  --gradient-brand: linear-gradient(135deg, #88c0d0 0%, #81a1c1 100%);
+}
+
+[data-theme="lavender"] {
+  --bg-void: #0c0a12; --bg-deep: #120f1a; --bg-base: #1a1525;
+  --bg-surface: #221c30; --bg-elevated: #2a243c; --bg-hover: #342e48;
+  --glass-border: rgba(168, 160, 229, 0.18);
+  --text-primary: #f0eef8; --text-secondary: #b8b0d0;
+  --accent: #a8a0e5; --accent-cyan: #7dcfa3; --accent-violet: #a8a0e5;
+  --accent-purple: #c4b5fd; --accent-mint: #7dcfa3;
+  --gradient-brand: linear-gradient(135deg, #a8a0e5 0%, #70a8e8 50%, #7dcfa3 100%);
+  --shadow-glow: 0 0 32px rgba(168, 160, 229, 0.2);
 }
