@@ -168,6 +168,8 @@ class ProviderRegistry:
         self._providers: Dict[str, ProviderEndpoint] = {}
         self._health: Dict[str, ProviderHealth] = {}
         self._active_provider: Optional[str] = None
+        from mitchell.core.omniroute import omniroute
+        omniroute.load_env_keys()
         self._load_builtin_providers()
 
     def _load_builtin_providers(self) -> None:

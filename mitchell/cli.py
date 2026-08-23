@@ -838,6 +838,43 @@ def mcp_command() -> None:
         pass
 
 
+@app.command(name="quicksilver", help="Execute high-velocity Nous Hermes Quicksilver autonomous reasoning loop.")
+def quicksilver_command(
+    task: str = typer.Argument(..., help="Goal or task for Quicksilver agent"),
+    model: str = typer.Option("fast", help="Model tier: fast, think, deep, pro"),
+) -> None:
+    """Run Hermes Agent Quicksilver Turbo Mode."""
+    from mitchell.hive.quicksilver import HermesQuicksilverAgent
+    console.print(f"[bold cyan]Running Hermes Agent Quicksilver Turbo ({model})...[/bold cyan]")
+    agent = HermesQuicksilverAgent(model_name=model)
+    res = asyncio.run(agent.async_execute(task))
+    console.print(Panel(f"[bold green]Quicksilver Synthesis:[/bold green]\n\n{res}", border_style="cyan", title=f"Hermes Quicksilver: {agent.agent_id}"))
+
+
+@app.command(name="omniroute", help="Inspect OmniRoute multi-provider gateway and test .env API keys.")
+def omniroute_command() -> None:
+    """Inspect OmniRoute status and loaded .env provider keys."""
+    from mitchell.core.omniroute import omniroute
+    keys = omniroute.load_env_keys()
+    status = omniroute.get_status()
+
+    table = Table(show_header=True, header_style="bold green")
+    table.add_column("Provider", style="cyan")
+    table.add_column(".env Key Status", style="white")
+
+    for prov, configured in keys.items():
+        table.add_row(prov.upper(), "[green]Configured (Found in .env)[/green]" if configured else "[dim]Not Set[/dim]")
+
+    console.print(Panel(
+        f"[bold green]OmniRoute Gateway Mode:[/bold green] {status.mode.upper()}\n"
+        f"[bold cyan]Active Configured Providers:[/bold cyan] {status.total_providers_available} available\n"
+        f"[bold cyan]Cascade Order:[/bold cyan] {' -> '.join(status.active_cascade)}",
+        title="OmniRoute Provider Gateway",
+        border_style="green",
+    ))
+    console.print(table)
+
+
 def do(goal: Optional[str] = None) -> None:
     """Direct entry point for mitchell-do console script."""
     if goal is None:
