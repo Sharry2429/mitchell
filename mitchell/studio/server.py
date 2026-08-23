@@ -324,9 +324,11 @@ async def api_search(request: Request) -> JSONResponse:
 
 
 async def api_settings(request: Request) -> JSONResponse:
-    """Settings read/write API."""
+    """Settings read/write API with full API key persistence."""
+    import os
+    env_file = Path(__file__).resolve().parent.parent.parent / ".env"
+
     if request.method == "GET":
-        # Return non-sensitive settings
         return JSONResponse({
             "app_name": settings.app_name,
             "debug": settings.debug,
@@ -337,9 +339,60 @@ async def api_settings(request: Request) -> JSONResponse:
             "sync_enabled": settings.sync_enabled,
             "voice_wake_word": settings.voice_wake_word,
             "voice_stt_provider": settings.voice_stt_provider,
-            "download_max_connections": settings.download_max_connections,
+            "homeassistant_url": settings.homeassistant_url or os.environ.get("HOMEASSISTANT_URL", ""),
+            "keys_configured": {
+                "anthropic": bool(settings.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY")),
+                "openai": bool(settings.openai_api_key or os.environ.get("OPENAI_API_KEY")),
+                "xai": bool(settings.xai_api_key or os.environ.get("XAI_API_KEY")),
+                "gemini": bool(settings.gemini_api_key or os.environ.get("GEMINI_API_KEY")),
+                "groq": bool(settings.groq_api_key or os.environ.get("GROQ_API_KEY")),
+                "deepseek": bool(settings.deepseek_api_key or os.environ.get("DEEPSEEK_API_KEY")),
+                "openrouter": bool(settings.openrouter_api_key or os.environ.get("OPENROUTER_API_KEY")),
+                "homeassistant": bool(settings.homeassistant_token or os.environ.get("HOMEASSISTANT_TOKEN")),
+            },
         })
-    return JSONResponse({"status": "read-only in this version"})
+    elif request.method == "POST":
+        body = await request.json()
+        keys_map = {
+            "anthropic_api_key": "ANTHROPIC_API_KEY",
+            "openai_api_key": "OPENAI_API_KEY",
+            "xai_api_key": "XAI_API_KEY",
+            "gemini_api_key": "GEMINI_API_KEY",
+            "groq_api_key": "GROQ_API_KEY",
+            "deepseek_api_key": "DEEPSEEK_API_KEY",
+            "openrouter_api_key": "OPENROUTER_API_KEY",
+            "homeassistant_url": "HOMEASSISTANT_URL",
+            "homeassistant_token": "HOMEASSISTANT_TOKEN",
+        }
+
+        env_lines = []
+        if env_file.exists():
+            env_lines = env_file.read_text(encoding="utf-8").splitlines()
+
+        updated_keys = set()
+        for field, env_var in keys_map.items():
+            if field in body and body[field]:
+                val = body[field].strip()
+                os.environ[env_var] = val
+                setattr(settings, field, val)
+                updated_keys.add(env_var)
+                # Replace or append in .env
+                found = False
+                for idx, line in enumerate(env_lines):
+                    if line.startswith(f"{env_var}=") or line.startswith(f"MITCHELL_{env_var}="):
+                        env_lines[idx] = f"{env_var}={val}"
+                        found = True
+                        break
+                if not found:
+                    env_lines.append(f"{env_var}={val}")
+
+        if updated_keys:
+            env_file.write_text("\n".join(env_lines) + "\n", encoding="utf-8")
+            logger.info("Saved and updated {} configuration keys to .env", len(updated_keys))
+
+        return JSONResponse({"status": "saved", "updated": list(updated_keys)})
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
 
 
 async def api_workspace(request: Request) -> JSONResponse:
@@ -662,8 +715,9 @@ def create_studio_app() -> Starlette:
         Route("/api/agents", endpoint=api_agents),
         Route("/api/diagnostics", endpoint=api_diagnostics),
         Route("/api/search", endpoint=api_search, methods=["POST"]),
-        Route("/api/settings", endpoint=api_settings, methods=["GET"]),
+        Route("/api/settings", endpoint=api_settings, methods=["GET", "POST"]),
         Route("/api/workspace", endpoint=api_workspace, methods=["GET"]),
+
         Route("/api/ide", endpoint=api_ide, methods=["GET", "POST"]),
         Route("/api/harness", endpoint=api_harness, methods=["GET", "POST"]),
         Route("/api/documents", endpoint=api_documents, methods=["GET", "POST"]),
