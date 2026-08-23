@@ -42,6 +42,10 @@ class ToolRegistry:
         self._tools[tool.name] = tool
         return tool
 
+    def unregister(self, name: str) -> Optional[Tool]:
+        """Remove a tool from the registry."""
+        return self._tools.pop(name, None)
+
     def get(self, name: str) -> Optional[Tool]:
         """Retrieve a registered tool by name."""
         return self._tools.get(name)

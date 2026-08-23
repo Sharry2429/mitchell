@@ -184,9 +184,105 @@ async def api_tools(request: Request) -> JSONResponse:
 
 
 async def api_skills(request: Request) -> JSONResponse:
-    """List registered skills."""
-    skills = [s.model_dump(mode="json") for s in skill_library.list_skills()]
-    return JSONResponse({"skills": skills, "count": len(skills)})
+    """List, install, or execute procedural skills."""
+    from mitchell.skills.executor import skill_executor
+    if request.method == "GET":
+        skills = [s.model_dump(mode="json") for s in skill_library.list_skills()]
+        return JSONResponse({"skills": skills, "count": len(skills)})
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "execute")
+        if action == "execute":
+            res = skill_executor.execute(body.get("name", ""), parameters=body.get("parameters", {}))
+            return JSONResponse(res)
+        elif action == "install_markdown":
+            skill = skill_library.install_skill_markdown(body.get("markdown", ""), name=body.get("name"))
+            return JSONResponse({"status": "success", "skill": skill.model_dump(mode="json")})
+        elif action == "delete":
+            deleted = skill_library.delete_skill(body.get("name", ""))
+            return JSONResponse({"status": "deleted" if deleted else "not_found"})
+        return JSONResponse({"error": f"Unknown skill action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_plugins(request: Request) -> JSONResponse:
+    """Plugin and Marketplace catalog API."""
+    from mitchell.plugins import plugin_installer, plugin_loader, plugin_marketplace
+    if request.method == "GET":
+        plugin_loader.discover_and_load_all()
+        installed = plugin_loader.list_plugins()
+        marketplace = [
+            {
+                "name": p.name,
+                "version": p.version,
+                "description": p.description,
+                "author": p.author,
+                "marketplace": p.marketplace,
+                "category": p.category,
+                "tags": p.tags,
+                "has_mcp": p.has_mcp,
+                "has_skills": p.has_skills,
+                "installed": any(i["name"].lower() == p.name.lower() for i in installed),
+            }
+            for p in plugin_marketplace.search_catalog()
+        ]
+        return JSONResponse({
+            "installed": installed,
+            "marketplace": marketplace,
+            "installed_count": len(installed),
+            "marketplace_count": len(marketplace),
+        })
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "install")
+        target = body.get("plugin", body.get("source", ""))
+        if not target:
+            return JSONResponse({"error": "Missing plugin target"}, status_code=400)
+        if action == "install":
+            res = plugin_installer.install(target, marketplace=body.get("marketplace"))
+            return JSONResponse(res)
+        elif action == "uninstall":
+            res = plugin_installer.uninstall(target)
+            return JSONResponse(res)
+        return JSONResponse({"error": f"Unknown action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
+
+
+async def api_mcp(request: Request) -> JSONResponse:
+    """Model Context Protocol (MCP) server management API."""
+    from mitchell.mcp_client.hub import mcp_hub
+    if request.method == "GET":
+        return JSONResponse({
+            "servers": mcp_hub.list_servers(),
+            "count": len(mcp_hub.clients),
+        })
+    elif request.method == "POST":
+        body = await request.json()
+        action = body.get("action", "add")
+        server_name = body.get("server_name", "")
+        if action == "add":
+            command = body.get("command", "")
+            args = body.get("args", [])
+            env = body.get("env", {})
+            client = mcp_hub.add_stdio_server(server_name, command=command, args=args, env=env)
+            return JSONResponse({
+                "status": "connected" if client.is_connected else "failed",
+                "server_name": server_name,
+                "tools": client.list_remote_tools(),
+            })
+        elif action == "remove":
+            res = mcp_hub.remove_server(server_name)
+            return JSONResponse({"status": "removed" if res else "not_found"})
+        elif action == "call":
+            client = mcp_hub.get_client(server_name)
+            if not client:
+                return JSONResponse({"error": f"Server '{server_name}' not found"}, status_code=404)
+            tool_name = body.get("tool_name", "")
+            args = body.get("arguments", {})
+            res = client.call_tool(tool_name, arguments=args)
+            return JSONResponse(res)
+        return JSONResponse({"error": f"Unknown action: {action}"}, status_code=400)
+    return JSONResponse({"error": "Method not allowed"}, status_code=405)
 
 
 async def api_agents(request: Request) -> JSONResponse:
@@ -375,7 +471,9 @@ def create_studio_app() -> Starlette:
         Route("/api/providers", endpoint=api_providers, methods=["GET", "POST"]),
         Route("/api/memory", endpoint=api_memory),
         Route("/api/tools", endpoint=api_tools),
-        Route("/api/skills", endpoint=api_skills),
+        Route("/api/skills", endpoint=api_skills, methods=["GET", "POST"]),
+        Route("/api/plugins", endpoint=api_plugins, methods=["GET", "POST"]),
+        Route("/api/mcp", endpoint=api_mcp, methods=["GET", "POST"]),
         Route("/api/agents", endpoint=api_agents),
         Route("/api/diagnostics", endpoint=api_diagnostics),
         Route("/api/search", endpoint=api_search, methods=["POST"]),

@@ -389,41 +389,223 @@ def mesh_command(
     console.print(table)
 
 
-@app.command(name="plugin", help="Discover and manage drop-in plugins.")
+@app.command(name="plugin", help="Manage plugins and Claude official marketplace catalog (list, install, uninstall, search).")
 def plugin_command(
-    discover: bool = typer.Option(True, "--discover", "-d", help="Discover and list installed plugins"),
+    action: str = typer.Argument("list", help="Action: list, install, uninstall, search, marketplace"),
+    target: Optional[str] = typer.Argument(None, help="Plugin name (e.g. 'github', 'sqlite', 'fetch') or Git URL"),
+    marketplace: Optional[str] = typer.Option("claude-plugins-official", help="Source marketplace"),
 ) -> None:
-    """Manage dynamic plugins."""
-    from mitchell.plugins import plugin_loader
+    """Manage dynamic plugins and Claude Code marketplaces."""
+    from mitchell.plugins import plugin_installer, plugin_loader, plugin_marketplace
 
-    plugin_loader.discover_and_load_all()
-    plugins = plugin_loader.list_plugins()
+    act = action.lower()
+    if act in ("list", "ls"):
+        plugin_loader.discover_and_load_all()
+        plugins = plugin_loader.list_plugins()
 
-    table = Table(title="🔌 Mitchell Active Plugins", border_style="green")
-    table.add_column("Name", style="bold green")
-    table.add_column("Version", style="cyan")
-    table.add_column("Description", style="white")
-    table.add_column("Author", style="dim")
+        table = Table(title="🔌 Mitchell Installed Plugins", border_style="green")
+        table.add_column("Name", style="bold green")
+        table.add_column("Version", style="cyan")
+        table.add_column("Description", style="white")
+        table.add_column("Author", style="dim")
 
-    for p in plugins:
-        table.add_row(p["name"], p["version"], p["description"], p.get("author") or "Community")
+        for p in plugins:
+            table.add_row(p["name"], p["version"], p["description"], p.get("author") or "Community")
 
-    if not plugins:
-        console.print("[dim]No drop-in plugins found in .mitchell/plugins/ directory.[/dim]")
-    else:
+        if not plugins:
+            console.print("[dim]No plugins installed yet. Try:[/dim] [bold yellow]mitchell plugin install github[/bold yellow]")
+        else:
+            console.print(table)
+
+    elif act == "install":
+        if not target:
+            console.print("[bold red]Error:[/bold red] Missing plugin name or URL to install. Example: [yellow]mitchell plugin install github[/yellow]")
+            return
+        console.print(f"[bold cyan]Installing plugin '{target}' from {marketplace}...[/bold cyan]")
+        res = plugin_installer.install(target, marketplace=marketplace)
+        if res.get("success"):
+            console.print(f"[bold green]✓ {res.get('message')}[/bold green]")
+        else:
+            console.print(f"[bold red]✗ Failed to install:[/bold red] {res.get('error')}")
+
+    elif act in ("uninstall", "remove", "rm"):
+        if not target:
+            console.print("[bold red]Error:[/bold red] Missing plugin name to uninstall.")
+            return
+        res = plugin_installer.uninstall(target)
+        if res.get("success"):
+            console.print(f"[bold green]✓ {res.get('message')}[/bold green]")
+        else:
+            console.print(f"[bold red]✗ {res.get('error')}[/bold red]")
+
+    elif act in ("search", "marketplace", "discover"):
+        query = target or ""
+        results = plugin_marketplace.search_catalog(query)
+        table = Table(title="🛒 Claude Official Plugin Marketplace", border_style="cyan")
+        table.add_column("Plugin", style="bold cyan")
+        table.add_column("Version", style="green")
+        table.add_column("Category", style="yellow")
+        table.add_column("MCP?", style="magenta")
+        table.add_column("Description", style="white")
+
+        for r in results:
+            table.add_row(
+                r.name,
+                r.version,
+                r.category,
+                "✓ Yes" if r.has_mcp else "No",
+                r.description[:75] + ("..." if len(r.description) > 75 else ""),
+            )
+        console.print(table)
+        console.print(f"[dim]Install any plugin via:[/dim] [yellow]mitchell plugin install <name>[/yellow]")
+
+
+@app.command(name="skill", help="Manage and execute procedural skills and SKILL.md definitions.")
+def skill_command(
+    action: str = typer.Argument("list", help="Action: list, install, run, info, delete"),
+    name_or_file: Optional[str] = typer.Argument(None, help="Skill name or path to SKILL.md"),
+    params: Optional[str] = typer.Option(None, "--params", "-p", help="JSON parameters for execution"),
+) -> None:
+    """Manage and execute procedural skills."""
+    from mitchell.skills.executor import skill_executor
+    from mitchell.skills.library import skill_library
+
+    act = action.lower()
+    if act in ("list", "ls"):
+        skills = skill_library.list_skills()
+        table = Table(title="🧠 Mitchell Procedural Skill Library", border_style="magenta")
+        table.add_column("Skill Name", style="bold magenta")
+        table.add_column("Version", style="cyan")
+        table.add_column("Source", style="yellow")
+        table.add_column("Confidence", style="green")
+        table.add_column("Description", style="white")
+
+        for s in skills:
+            table.add_row(
+                s.name,
+                s.version,
+                s.source,
+                f"{int(s.confidence * 100)}%",
+                s.description[:70] + ("..." if len(s.description) > 70 else ""),
+            )
         console.print(table)
 
+    elif act == "install":
+        if not name_or_file:
+            console.print("[bold red]Error:[/bold red] Provide path to a SKILL.md file or skill name.")
+            return
+        from pathlib import Path
+        p = Path(name_or_file)
+        if p.exists() and p.is_file():
+            skill = skill_library.install_from_file(p)
+            console.print(f"[bold green]✓ Installed skill '{skill.name}' (v{skill.version}) from {p.name}[/bold green]")
+        else:
+            console.print(f"[bold red]File '{name_or_file}' not found.[/bold red]")
 
-@app.command(name="studio", help="Launch the real-time Visual Workflow Studio web UI.")
-def studio_command(
-    port: int = typer.Option(8500, help="Studio HTTP server port"),
+    elif act in ("run", "exec"):
+        if not name_or_file:
+            console.print("[bold red]Error:[/bold red] Missing skill name to execute.")
+            return
+        import json
+        p_dict = {}
+        if params:
+            try:
+                p_dict = json.loads(params)
+            except Exception:
+                p_dict = {"input": params}
+
+        console.print(f"[bold cyan]Executing skill '{name_or_file}'...[/bold cyan]")
+        res = skill_executor.execute(name_or_file, parameters=p_dict)
+        if res.get("success"):
+            console.print(f"[bold green]✓ Completed in {res.get('duration_s')}s ({len(res.get('steps', []))} steps)[/bold green]")
+            for step in res.get("steps", []):
+                console.print(f"  • [{step['step_index']}] {step['name']}: [green]{step.get('output', 'OK')}[/green]")
+        else:
+            console.print(f"[bold red]✗ Execution failed:[/bold red] {res.get('error')}")
+
+    elif act == "info":
+        if not name_or_file:
+            console.print("[bold red]Error:[/bold red] Missing skill name.")
+            return
+        skill = skill_library.get_skill(name_or_file)
+        if not skill:
+            console.print(f"[bold red]Skill '{name_or_file}' not found.[/bold red]")
+            return
+        from mitchell.skills.parser import SkillMarkdownParser
+        md = SkillMarkdownParser.serialize_to_markdown(skill)
+        console.print(Panel(md, title=f"Skill: {skill.name}", border_style="cyan"))
+
+
+@app.command(name="mcp", help="Manage connected external Model Context Protocol (MCP) servers and bridged tools.")
+def mcp_command(
+    action: str = typer.Argument("list", help="Action: list, add, remove, call"),
+    server: Optional[str] = typer.Argument(None, help="MCP Server name"),
+    target: Optional[str] = typer.Argument(None, help="Command (for add) or tool name (for call)"),
+    args: Optional[str] = typer.Option(None, "--args", "-a", help="Arguments string or JSON"),
 ) -> None:
-    """Launch the visual workflow studio."""
-    from mitchell.studio import MitchellStudioServer
+    """Manage external Model Context Protocol (MCP) servers."""
+    from mitchell.mcp_client.hub import mcp_hub
 
-    console.print(f"[bold green]🎨 Mitchell Visual Workflow Studio starting on http://127.0.0.1:{port}...[/bold green]")
-    server = MitchellStudioServer(host="127.0.0.1", port=port)
-    server.start()
+    act = action.lower()
+    if act in ("list", "ls"):
+        servers = mcp_hub.list_servers()
+        table = Table(title="🌐 External MCP Connected Servers", border_style="cyan")
+        table.add_column("Server Name", style="bold cyan")
+        table.add_column("Status", style="green")
+        table.add_column("Tools", style="yellow")
+        table.add_column("Bridged Tool Names", style="white")
+
+        for s in servers:
+            table.add_row(
+                s["server_name"],
+                "Connected" if s["is_connected"] else "Offline",
+                str(s["tool_count"]),
+                ", ".join(s["tools"][:4]) + ("..." if len(s["tools"]) > 4 else ""),
+            )
+        if not servers:
+            console.print("[dim]No external MCP servers currently active. Add one via:[/dim] [yellow]mitchell mcp add <name> <command>[/yellow]")
+        else:
+            console.print(table)
+
+    elif act == "add":
+        if not server or not target:
+            console.print("[bold red]Error:[/bold red] Usage: [yellow]mitchell mcp add <server_name> <command> [--args '...'][/yellow]")
+            return
+        cmd_args = args.split() if args else []
+        console.print(f"[bold cyan]Connecting to stdio MCP server '{server}' ({target})...[/bold cyan]")
+        client = mcp_hub.add_stdio_server(server_name=server, command=target, args=cmd_args)
+        if client.is_connected:
+            console.print(f"[bold green]✓ Connected to '{server}'. Bridged {len(client.remote_tools)} tools into Mitchell ToolRegistry![/bold green]")
+        else:
+            console.print(f"[bold red]✗ Failed to connect to MCP server '{server}'. Check logs for details.[/bold red]")
+
+    elif act in ("remove", "rm", "delete"):
+        if not server:
+            console.print("[bold red]Error:[/bold red] Missing server name to remove.")
+            return
+        if mcp_hub.remove_server(server):
+            console.print(f"[bold green]✓ Disconnected and removed MCP server '{server}'[/bold green]")
+        else:
+            console.print(f"[bold red]Server '{server}' not found.[/bold red]")
+
+    elif act == "call":
+        if not server or not target:
+            console.print("[bold red]Error:[/bold red] Usage: [yellow]mitchell mcp call <server_name> <tool_name> [--args '...'][/yellow]")
+            return
+        client = mcp_hub.get_client(server)
+        if not client:
+            console.print(f"[bold red]MCP server '{server}' not found or not connected.[/bold red]")
+            return
+        import json
+        arg_dict = {}
+        if args:
+            try:
+                arg_dict = json.loads(args)
+            except Exception:
+                arg_dict = {"input": args}
+        console.print(f"[bold cyan]Invoking {server}:{target}...[/bold cyan]")
+        res = client.call_tool(target, arguments=arg_dict)
+        console.print(Panel(json.dumps(res, indent=2), title=f"MCP Result: {server}:{target}", border_style="green"))
 
 
 @app.command(name="benchmark", help="Execute multi-agent benchmarking evaluation arena.")

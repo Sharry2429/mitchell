@@ -195,6 +195,52 @@ def parse_fast_intent(user_input: str) -> Optional[Intent]:
                 parameters={"category": "user", "key": "general", "content": remainder},
             )
 
+    # Plugins fast intent
+    if lower in ("list plugins", "plugins", "show plugins", "plugin list"):
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="plugin_list",
+            parameters={},
+        )
+    if lower.startswith("plugin install ") or lower.startswith("install plugin "):
+        pfx = "install plugin " if lower.startswith("install plugin ") else "plugin install "
+        name = text[len(pfx):].strip()
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="plugin_install",
+            parameters={"source": name},
+        )
+    if lower.startswith("plugin uninstall ") or lower.startswith("uninstall plugin "):
+        pfx = "uninstall plugin " if lower.startswith("uninstall plugin ") else "plugin uninstall "
+        name = text[len(pfx):].strip()
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="plugin_uninstall",
+            parameters={"plugin_name": name},
+        )
+
+    # MCP fast intent
+    if lower in ("list mcp", "mcp list", "mcp servers", "list mcp servers"):
+        return Intent(
+            raw_input=text,
+            action_type="call_tool",
+            tool_name="mcp_list_servers",
+            parameters={},
+        )
+    if lower.startswith("mcp add "):
+        remainder = text[8:].strip()
+        parts = remainder.split(maxsplit=1)
+        if len(parts) >= 2:
+            return Intent(
+                raw_input=text,
+                action_type="call_tool",
+                tool_name="mcp_add_server",
+                parameters={"server_name": parts[0], "command": parts[1]},
+            )
+
     # Memory Recall: "recall <category> <key>"
     if lower.startswith("recall "):
         remainder = text[7:].strip()

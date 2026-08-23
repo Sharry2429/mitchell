@@ -217,7 +217,59 @@ class SkillLibrary:
 
         self.save_skill(skill)
 
+    def install_skill_markdown(self, markdown_text: str, name: Optional[str] = None) -> Skill:
+        """Parse and install a skill directly from SKILL.md markdown text."""
+        from mitchell.skills.parser import SkillMarkdownParser
+        skill = SkillMarkdownParser.parse_text(markdown_text, default_name=name)
+        return self.save_skill(skill)
+
+    def install_from_file(self, file_path: Any) -> Skill:
+        """Parse and install a skill from a .md or .json file."""
+        from pathlib import Path
+        p = Path(file_path)
+        if p.suffix.lower() == ".json":
+            data = json.loads(p.read_text(encoding="utf-8"))
+            skill = Skill.model_validate(data)
+            return self.save_skill(skill)
+        else:
+            from mitchell.skills.parser import SkillMarkdownParser
+            skill = SkillMarkdownParser.parse_file(p)
+            return self.save_skill(skill)
+
+    def discover_and_load_skills(self, directory: Any) -> List[Skill]:
+        """Scan a directory for SKILL.md or .json skill definitions and register them."""
+        from pathlib import Path
+        p = Path(directory)
+        loaded = []
+        if not p.exists():
+            return loaded
+
+        for item in p.rglob("*.md"):
+            if item.is_file():
+                try:
+                    s = self.install_from_file(item)
+                    loaded.append(s)
+                except Exception as e:
+                    logger.warning("Failed to parse skill from {}: {}", item, e)
+        return loaded
+
+    def delete_skill(self, name_or_id: str) -> bool:
+        """Remove a skill from database and vector index."""
+        skill = self.get_skill(name_or_id)
+        if not skill:
+            return False
+
+        with self.db._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM skills WHERE name = ? OR id = ?", (name_or_id, name_or_id))
+            conn.commit()
+
+        logger.info("Deleted skill '{}' from library", skill.name)
+        event_log.log_event("skill_deleted", source="skill_library", data={"skill_name": skill.name})
+        return True
+
 
 skill_library = SkillLibrary()
 
 __all__ = ["SkillLibrary", "skill_library"]
+

@@ -198,14 +198,21 @@
         </div>
       </div>
 
-      <!-- ─── Skills Panel ──────────────────────────────────────────── -->
+      <!-- ─── Skills, Plugins & MCP Panel ───────────────────────── -->
       <div class="panel" id="panel-skills">
         <div class="panel-header">
-          <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Skills & Connectors</h2>
+          <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Plugins, Skills & MCP Hub</h2>
           <button class="refresh-btn" data-refresh="skills"><i class="fa-solid fa-rotate"></i></button>
         </div>
-        <div class="panel-body" id="skills-content">
-          <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+        <div class="panel-body">
+          <div class="memory-tabs">
+            <button class="tab-btn active" data-skilltab="skills">Procedural Skills</button>
+            <button class="tab-btn" data-skilltab="marketplace">Claude Official Plugins</button>
+            <button class="tab-btn" data-skilltab="mcp">MCP Servers</button>
+          </div>
+          <div id="skills-content">
+            <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+          </div>
         </div>
       </div>
 

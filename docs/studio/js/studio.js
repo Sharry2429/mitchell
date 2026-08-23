@@ -310,14 +310,37 @@ function renderMemory(data) {
   container.innerHTML = html;
 }
 
-async function loadSkills() {
-  try {
-    const resp = await fetch('/api/skills');
-    const data = await resp.json();
-    renderSkills(data);
-  } catch (e) {
-    document.getElementById('skills-content').innerHTML =
-      '<div class="empty-state"><p>Failed to load skills</p></div>';
+let currentSkillTab = 'skills';
+
+async function loadSkills(tab) {
+  if (tab) currentSkillTab = tab;
+  const container = document.getElementById('skills-content');
+  container.innerHTML = '<div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
+
+  if (currentSkillTab === 'skills') {
+    try {
+      const resp = await fetch('/api/skills');
+      const data = await resp.json();
+      renderSkills(data);
+    } catch (e) {
+      container.innerHTML = '<div class="empty-state"><p>Failed to load skills</p></div>';
+    }
+  } else if (currentSkillTab === 'marketplace') {
+    try {
+      const resp = await fetch('/api/plugins');
+      const data = await resp.json();
+      renderMarketplace(data);
+    } catch (e) {
+      container.innerHTML = '<div class="empty-state"><p>Failed to load marketplace</p></div>';
+    }
+  } else if (currentSkillTab === 'mcp') {
+    try {
+      const resp = await fetch('/api/mcp');
+      const data = await resp.json();
+      renderMCP(data);
+    } catch (e) {
+      container.innerHTML = '<div class="empty-state"><p>Failed to load MCP servers</p></div>';
+    }
   }
 }
 
@@ -325,19 +348,112 @@ function renderSkills(data) {
   const container = document.getElementById('skills-content');
   const skills = data.skills || [];
   if (!skills.length) {
-    container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-wand-magic-sparkles"></i><p>No skills registered yet</p></div>';
+    container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-wand-magic-sparkles"></i><p>No procedural skills registered yet</p></div>';
     return;
   }
 
-  let html = '';
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
   for (const s of skills) {
     html += `
-      <div class="card">
-        <div class="card-title">${s.name} <span class="badge badge-purple">v${s.version || '1.0'}</span></div>
-        <div class="card-subtitle">${s.description || 'No description'}</div>
+      <div class="card" style="margin-bottom:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span class="card-title" style="margin:0">${s.name}</span>
+          <span class="badge badge-purple">v${s.version || '1.0'}</span>
+        </div>
+        <div class="card-subtitle" style="font-size:12px;margin-bottom:8px">${s.description || 'Procedural workflow.'}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted)">
+          <span>Source: <strong style="color:var(--text-main)">${s.source || 'organic'}</strong></span>
+          <span class="badge badge-green">${Math.round((s.confidence || 0.8) * 100)}% conf</span>
+        </div>
       </div>
     `;
   }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderMarketplace(data) {
+  const container = document.getElementById('skills-content');
+  const marketplace = data.marketplace || [];
+  if (!marketplace.length) {
+    container.innerHTML = '<div class="empty-state"><p>No marketplace plugins found</p></div>';
+    return;
+  }
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">';
+  for (const p of marketplace) {
+    const isInstalled = p.installed;
+    html += `
+      <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:space-between">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span class="card-title" style="margin:0">${p.name}</span>
+            <div>
+              ${p.has_mcp ? '<span class="badge badge-blue">MCP</span>' : ''}
+              ${isInstalled ? '<span class="badge badge-green">Installed</span>' : '<span class="badge badge-yellow">Official</span>'}
+            </div>
+          </div>
+          <div class="card-subtitle" style="font-size:12px;margin-bottom:8px">${p.description}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05)">
+          <span style="font-size:11px;color:var(--text-muted)">${p.author || 'Anthropic'}</span>
+          <button class="topbar-btn" style="font-size:11px;padding:4px 10px;height:auto;background:${isInstalled ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)'};color:${isInstalled ? '#ef4444' : '#22c55e'}" onclick="togglePluginInstall('${p.name}', ${isInstalled})">
+            ${isInstalled ? 'Uninstall' : '<i class="fa-solid fa-download"></i> Install'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+async function togglePluginInstall(name, isInstalled) {
+  try {
+    const action = isInstalled ? 'uninstall' : 'install';
+    const resp = await fetch('/api/plugins', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, plugin: name }),
+    });
+    const res = await resp.json();
+    alert(res.message || (res.success ? 'Success!' : res.error));
+    loadSkills('marketplace');
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function renderMCP(data) {
+  const container = document.getElementById('skills-content');
+  const servers = data.servers || [];
+  if (!servers.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fa-solid fa-server"></i>
+        <p>No external MCP servers connected.</p>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">Connect via CLI: <code>mitchell mcp add &lt;name&gt; &lt;cmd&gt;</code> or install an official plugin.</div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
+  for (const s of servers) {
+    html += `
+      <div class="card" style="margin-bottom:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span class="card-title" style="margin:0">${s.server_name}</span>
+          <span class="badge ${s.is_connected ? 'badge-green' : 'badge-red'}">${s.is_connected ? 'Active' : 'Offline'}</span>
+        </div>
+        <div class="card-subtitle" style="font-size:12px;margin-bottom:8px">Bridged Tools (${s.tool_count}):</div>
+        <div style="font-family:monospace;font-size:11px;color:var(--text-muted)">
+          ${(s.tools || []).join(', ') || 'No tools exported'}
+        </div>
+      </div>
+    `;
+  }
+  html += '</div>';
   container.innerHTML = html;
 }
 
@@ -579,6 +695,15 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab-btn[data-wstab]').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       loadWorkspace(tab.dataset.wstab);
+    });
+  });
+
+  // Skills / Plugins / MCP sub-tabs
+  document.querySelectorAll('.tab-btn[data-skilltab]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn[data-skilltab]').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      loadSkills(tab.dataset.skilltab);
     });
   });
 

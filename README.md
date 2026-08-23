@@ -88,7 +88,13 @@ flowchart TB
 - **Executive Daily Briefing**: Synthesizes schedule, pending Kanban cards, unread WhatsApp messages, and hardware health into morning/evening briefings.
 - **Executive Voice Persona**: Conversational speech acknowledgments and status reporting.
 
-### 4. SOTA 2026 Model Cascade & Free-Tier First
+### 4. Claude Plugins & Autonomous MCP Subsystem ([claude-plugins-official](https://github.com/anthropics/claude-plugins-official))
+- **Official Claude Marketplace Catalog**: Pre-seeded official plugins (`github`, `sqlite`, `postgresql`, `fetch`, `memory`, `docker`, `python-lsp`, `typescript-lsp`, `puppeteer`, `filesystem`).
+- **Universal MCP Client Hub**: Real-time stdio JSON-RPC 2.0 subprocess manager bridging remote tools directly into Mitchell's ToolRegistry.
+- **Procedural `SKILL.md` Engine**: Parses YAML frontmatter and markdown procedural steps with variable substitution and error fallback policies.
+- **Autonomous AI Self-Extension**: Mitchell AI can autonomously install plugins, create procedural skills, and connect MCP servers via native tool calls (`plugin_install`, `skill_install`, `mcp_add_server`).
+
+### 5. SOTA 2026 Model Cascade & Free-Tier First
 - Live model switching across 8 LLM providers:
   - **Anthropic**: Claude 3.7 Sonnet (`claude-3-7-sonnet-20250219`, `claude-3-7-sonnet`), Claude 3.5 Sonnet, Claude 3.5 Haiku
   - **Groq (Free Tier)**: Llama 3.3 70B Versatile, Llama 3.1 8B Instant, Gemma 2 9B
@@ -121,8 +127,15 @@ Opens the Studio UI in your browser at `http://localhost:8500`.
 
 ### 3. CLI Commands & Fast Intents
 ```bash
-# Execute an autonomous multi-step goal
-python -m mitchell.cli goal "Research quantum computing breakthroughs and save to Workspace"
+# Install an official Claude plugin
+python -m mitchell.cli plugin install github
+
+# List and run procedural skills
+python -m mitchell.cli skill list
+python -m mitchell.cli skill run web_research_and_snapshot --params '{"url": "https://news.ycombinator.com"}'
+
+# Connect an external MCP server
+python -m mitchell.cli mcp add sqlite npx -y @modelcontextprotocol/server-sqlite
 
 # Send a WhatsApp message via WhatsApp MCP
 python -m mitchell.cli goal "whatsapp +14155550000 Meeting starts in 10 minutes"
@@ -154,12 +167,13 @@ Run the complete test suite:
 python -m pytest tests/ -v
 ```
 ```text
-============================= 43 passed in 19.47s =============================
+============================= 52 passed in 31.04s =============================
 ```
-100% of all 43 tests pass across:
+100% of all 52 tests pass across:
 - `tests/test_full_system.py` (26 tests)
 - `tests/test_peak_capabilities.py` (12 tests)
-- `tests/test_whatsapp_mcp_and_refinements.py` (5 tests)
+- `tests/test_plugins_and_mcp.py` (8 tests)
+- `tests/test_whatsapp_mcp_and_refinements.py` (6 tests)
 
 ---
 
